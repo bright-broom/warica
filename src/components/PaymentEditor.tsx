@@ -39,15 +39,22 @@ export function PaymentEditor({
   const workspace = usePaymentWorkspace();
   const { draft, editingId, updateDraft } = workspace;
   const { amount, memo } = draft;
+  const payerMissing = !!draft.payerId && !members.some((member) => member.id === draft.payerId);
   const payerId = members.some((member) => member.id === draft.payerId)
     ? draft.payerId
-    : (members[0]?.id ?? '');
+    : payerMissing
+      ? ''
+      : (members[0]?.id ?? '');
   const participants = draft.participantIds ?? members.map((member) => member.id);
   const selected = members.filter((member) => participants.includes(member.id));
+  const missingParticipants = participants.some(
+    (id) => !members.some((member) => member.id === id),
+  );
   const amountRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState('');
   const valid = validateAmount(Number(amount));
-  const shares = valid ? calculatePaymentSplit(Number(amount), selected.length) : [];
+  const shares =
+    valid && !missingParticipants ? calculatePaymentSplit(Number(amount), selected.length) : [];
   const amountError = amount.trim() && !valid ? '1〜1,000,000円の整数' : '';
   function submit(event: FormEvent) {
     event.preventDefault();
@@ -56,7 +63,7 @@ export function PaymentEditor({
         payerId,
         amount: Number(amount),
         memo,
-        participantIds: selected.map((member) => member.id),
+        participantIds: participants,
       },
       editingId,
     );
@@ -82,6 +89,9 @@ export function PaymentEditor({
         )}
       </SectionHeader>
       <form onSubmit={submit} className="space-y-4">
+        {(payerMissing || missingParticipants) && (
+          <Notice>削除されたメンバーが選択されています。支払者・対象者を確認してください。</Notice>
+        )}
         <Field id="amount" label="金額">
           <div className="relative">
             <span
@@ -133,6 +143,11 @@ export function PaymentEditor({
             value={payerId}
             onChange={(e) => updateDraft({ payerId: e.target.value })}
           >
+            {payerMissing && (
+              <NativeSelectOption value="" disabled>
+                支払った人を選択
+              </NativeSelectOption>
+            )}
             {members.map((member) => (
               <NativeSelectOption key={member.id} value={member.id}>
                 {member.name}
@@ -210,6 +225,20 @@ export function PaymentEditor({
               対象者を選択
             </p>
           )}
+          {missingParticipants && (
+            <div className="mt-2 flex justify-end">
+              <IconAction
+                label="対象者の変更を確認"
+                icon={Check}
+                variant="primary"
+                disabled={!selected.length}
+                onClick={() => {
+                  updateDraft({ participantIds: selected.map((member) => member.id) });
+                  setError('');
+                }}
+              />
+            </div>
+          )}
         </FieldSet>
         {error && <Notice alert>{error}</Notice>}
         <div className="flex items-center justify-between gap-3 border-t border-main/10 pt-4">
@@ -228,7 +257,7 @@ export function PaymentEditor({
             label={editingId ? '変更を保存する' : 'この支払いを追加する'}
             icon={editingId ? Check : Plus}
             variant="primary"
-            disabled={!valid || !selected.length || !payerId}
+            disabled={!valid || !selected.length || !payerId || missingParticipants}
           />
         </div>
       </form>

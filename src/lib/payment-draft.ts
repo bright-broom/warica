@@ -1,4 +1,4 @@
-import type { Result } from './types';
+import type { Member, Result } from './types';
 
 export const DRAFT_KEY = 'warica-payment-draft-v1';
 export type PaymentDraft = {
@@ -15,6 +15,18 @@ export const emptyWorkspace = (): DraftWorkspace => ({
   draft: { payerId: '', amount: '', memo: '', participantIds: null },
   editing: null,
 });
+
+/** Capture displayed defaults once; preserve missing IDs so they require a user's decision. */
+export function captureDraftSelection(
+  draft: PaymentDraft,
+  members: readonly Member[],
+): PaymentDraft {
+  return {
+    ...draft,
+    payerId: draft.payerId || members[0]?.id || '',
+    participantIds: draft.participantIds ?? members.map((member) => member.id),
+  };
+}
 
 function isDraft(value: unknown): value is PaymentDraft {
   if (!value || typeof value !== 'object') return false;
@@ -33,7 +45,11 @@ function isDraft(value: unknown): value is PaymentDraft {
   );
 }
 
-export function readDraft(raw: string | null, eventStamp: string): Result<DraftWorkspace> {
+export function readDraft(
+  raw: string | null,
+  eventStamp: string,
+  members: readonly Member[],
+): Result<DraftWorkspace> {
   if (!raw) return { ok: true, data: emptyWorkspace() };
   try {
     const record = JSON.parse(raw);
@@ -51,7 +67,21 @@ export function readDraft(raw: string | null, eventStamp: string): Result<DraftW
           !isDraft(value.editing.draft)))
     )
       throw new Error();
-    return { ok: true, data: value };
+    // Older drafts left visible defaults implicit. Anchor active drafts to the loaded roster;
+    // an untouched blank draft can still default to everyone when entry begins.
+    const draft = value.draft as PaymentDraft;
+    return {
+      ok: true,
+      data: {
+        draft:
+          draft.amount || draft.memo || draft.payerId || draft.participantIds !== null
+            ? captureDraftSelection(draft, members)
+            : draft,
+        editing: value.editing
+          ? { id: value.editing.id, draft: captureDraftSelection(value.editing.draft, members) }
+          : null,
+      },
+    };
   } catch {
     return { ok: false, error: '下書きを読み込めません。保存領域の内容は保持しています。' };
   }

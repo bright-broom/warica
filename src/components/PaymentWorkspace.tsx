@@ -4,6 +4,7 @@ import { useWarikanStore } from '@/app/useWarikanStore';
 import type { Payment } from '@/lib/types';
 import {
   DRAFT_KEY,
+  captureDraftSelection,
   emptyWorkspace,
   readDraft,
   serializeDraft,
@@ -38,6 +39,7 @@ function useWorkspace() {
       const result = readDraft(
         window.sessionStorage.getItem(DRAFT_KEY),
         store.getCurrentState().lastUpdated,
+        store.getCurrentState().members,
       );
       if (!result.ok) throw new Error(result.error);
       current.current = result.data;
@@ -96,13 +98,20 @@ function useWorkspace() {
     },
     updateDraft(patch: Partial<PaymentDraft>) {
       const previous = current.current;
+      const draft = {
+        ...captureDraftSelection(
+          previous.editing?.draft ?? previous.draft,
+          store.getCurrentState().members,
+        ),
+        ...patch,
+      };
       update(
         previous.editing
           ? {
               ...previous,
-              editing: { ...previous.editing, draft: { ...previous.editing.draft, ...patch } },
+              editing: { ...previous.editing, draft },
             }
-          : { ...previous, draft: { ...previous.draft, ...patch } },
+          : { ...previous, draft },
       );
     },
     startEditing(payment: Payment) {
