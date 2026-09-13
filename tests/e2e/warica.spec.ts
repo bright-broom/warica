@@ -19,9 +19,8 @@ async function setup(page: Page) {
   await page.getByRole('link', { name: '支払いを記録する', exact: true }).click();
   await expect(page).toHaveURL(/\/payments$/);
 }
-async function menu(page: Page, action: string) {
-  await page.getByRole('button', { name: 'メニュー', exact: true }).click();
-  await page.getByRole('menuitem', { name: action, exact: true }).click();
+async function refresh(page: Page) {
+  await page.getByRole('button', { name: 'リフレッシュ', exact: true }).click();
 }
 async function denyLocalWrites(page: Page) {
   await page.evaluate(() => {
@@ -89,7 +88,7 @@ test('complete flow: selected participants, immediate reload, edit, copy fallbac
   await expect(page.getByTestId('transfer-list').locator('li')).toContainText('¥500');
 
   await denyLocalWrites(page);
-  await menu(page, 'リフレッシュ');
+  await refresh(page);
   await expect(page.locator('main [role=alert]')).toContainText('保存できません');
   const downloading = page.waitForEvent('download');
   await page.getByRole('button', { name: 'バックアップ', exact: true }).click();
@@ -402,7 +401,7 @@ test('payment drafts survive route changes and continuous entry keeps payer and 
   await page.getByLabel('金額', { exact: true }).fill('12000');
   await page.getByRole('link', { name: '精算結果', exact: true }).click();
   await page.getByRole('link', { name: '支払い', exact: true }).click();
-  await menu(page, 'リフレッシュ');
+  await refresh(page);
   await expect(page.getByLabel('金額', { exact: true })).toHaveValue('12000');
   await page.getByRole('button', { name: '編集をキャンセル', exact: true }).click();
   await expect(page.getByLabel('金額', { exact: true })).toHaveValue('500');
@@ -507,11 +506,9 @@ test('shadcn controls support keyboard selection, help, tooltips and safe confir
     page.getByRole('button', { name: '最新の保存データを読み込む', exact: true }),
   ).toBeVisible();
   await other.close();
-  const trigger = page.getByRole('button', { name: 'メニュー', exact: true });
+  const trigger = page.getByRole('button', { name: 'リフレッシュ', exact: true });
   await trigger.focus();
   await trigger.press('Enter');
-  await page.getByRole('menuitem', { name: 'リフレッシュ', exact: true }).focus();
-  await page.keyboard.press('Enter');
   const dialog = page.getByRole('alertdialog', { name: '最新の保存データ' });
   await expect(dialog.getByRole('button', { name: 'キャンセル' })).toBeFocused();
   for (let i = 0; i < 4; i++) {
@@ -546,14 +543,14 @@ test('refresh keeps data and failed draft saves retain inputs until retry', asyn
   await page.getByLabel('金額', { exact: true }).fill('1.5');
   await page.getByLabel('何の支払い？').fill('まだ入力途中');
   await expect(page.locator('main [role=alert]')).toContainText('下書きを保存できません');
-  await menu(page, 'リフレッシュ');
+  await refresh(page);
   await expect(page.locator('html')).toHaveAttribute('data-before-refresh', 'yes');
   await expect(page.getByLabel('金額', { exact: true })).toHaveValue('1.5');
   await page.getByRole('link', { name: 'メンバー', exact: true }).click();
   await page.getByRole('link', { name: '支払い', exact: true }).click();
   await expect(page.getByLabel('何の支払い？')).toHaveValue('まだ入力途中');
   await page.evaluate(() => (window as unknown as { __restoreDraft: () => void }).__restoreDraft());
-  await menu(page, 'リフレッシュ');
+  await refresh(page);
   await expect(page.locator('html')).not.toHaveAttribute('data-before-refresh', 'yes');
   await expect(page.getByLabel('金額', { exact: true })).toHaveValue('1.5');
   await expect(page.getByLabel('何の支払い？')).toHaveValue('まだ入力途中');
@@ -787,7 +784,7 @@ test('a failed refresh keeps the event and both new and editing drafts', async (
   const saved = await page.evaluate((storageKey) => localStorage.getItem(storageKey), key);
   const draft = await page.evaluate(() => sessionStorage.getItem('warica-payment-draft-v1'));
   await denyLocalWrites(page);
-  await menu(page, 'リフレッシュ');
+  await refresh(page);
   await expect(page.locator('main [role=alert]')).toContainText('保存できません');
   await expect(page).toHaveURL(/\/payments$/);
   await expect(page.getByLabel('金額', { exact: true })).toHaveValue('1234');
@@ -813,7 +810,7 @@ test('a storage conflict can be cancelled or resolved using the latest saved eve
   await page.getByRole('link', { name: '支払い', exact: true }).click();
   const draft = await page.evaluate(() => sessionStorage.getItem('warica-payment-draft-v1'));
   await expect(page.locator('main [role=alert]')).toContainText('別の画面');
-  await menu(page, 'リフレッシュ');
+  await refresh(page);
   const dialog = page.getByRole('alertdialog');
   await expect(dialog).toContainText('最新の保存データ');
   await dialog.getByRole('button', { name: 'キャンセル', exact: true }).click();

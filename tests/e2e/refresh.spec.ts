@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-test('legacy appearance preferences cannot restore the removed theme; every menu only refreshes safely', async ({
+test('legacy appearance preferences cannot restore the removed theme; the header refresh action preserves data on every page', async ({
   page,
 }) => {
   await page.addInitScript(() => localStorage.setItem('warica-appearance-v1', 'classic'));
@@ -21,11 +21,11 @@ test('legacy appearance preferences cannot restore the removed theme; every menu
   );
   for (const name of ['メンバー', '支払い', '精算結果']) {
     await page.getByRole('link', { name, exact: true }).click();
-    await page.getByRole('button', { name: 'メニュー', exact: true }).click();
-    await expect(page.getByRole('menuitem')).toHaveCount(1);
-    await expect(page.getByRole('menuitem')).toHaveText('リフレッシュ');
+    await expect(page.locator('header').getByRole('button')).toHaveCount(1);
+    await expect(page.locator('header').getByRole('status')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'メニュー', exact: true })).toHaveCount(0);
     await page.evaluate(() => document.documentElement.setAttribute('data-before-refresh', 'yes'));
-    await page.getByRole('menuitem', { name: 'リフレッシュ', exact: true }).click();
+    await page.getByRole('button', { name: 'リフレッシュ', exact: true }).click();
     await expect(page.locator('html')).not.toHaveAttribute('data-before-refresh', 'yes');
     await expect(page.locator('[data-ui=panel]').first()).toHaveCSS('border-radius', '24px');
     expect(

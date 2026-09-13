@@ -5,23 +5,15 @@ import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react';
 import {
   ArrowDownToLine,
   ArrowUpFromLine,
-  CheckCheck,
   RotateCcw,
   ShieldCheck,
   Split,
   Users,
   Wallet,
   ArrowRight,
-  MoreHorizontal,
   RefreshCw,
 } from 'lucide-react';
 import { usePaymentWorkspace } from './PaymentWorkspace';
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from './ui/dropdown-menu';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Spinner } from './ui/spinner';
@@ -44,19 +36,11 @@ export function AppShell({ children }: { children: ReactNode }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [message, setMessage] = useState('');
   const allowReload = useRef(false);
-  const menuTrigger = useRef<HTMLButtonElement>(null);
-  const pendingRefresh = useRef(false);
-  const [menuOpen, setMenuOpen] = useState(false);
   const steps = navigation(state);
   const current = steps.find((step) => step.href === path);
   useEffect(() => {
     mainRef.current?.scrollTo({ top: 0 });
   }, [path, store.eventRevision]);
-  const saveLabel = !isLoaded
-    ? '読み込み中'
-    : storageError || workspace.storageError
-      ? '未保存・要確認'
-      : 'このブラウザに保存';
   useEffect(() => {
     if (!storageError && !workspace.storageError) return;
     const protect = (event: BeforeUnloadEvent) => {
@@ -147,7 +131,6 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div
       className="mx-auto min-h-dvh max-w-6xl px-4 max-lg:flex max-lg:h-dvh max-lg:flex-col sm:px-8 lg:px-12"
       data-testid="app-shell"
-      inert={menuOpen || undefined}
     >
       <a
         className="sr-only z-50 rounded-control accent-surface p-4 focus:not-sr-only focus:fixed focus:top-4"
@@ -172,55 +155,16 @@ export function AppShell({ children }: { children: ReactNode }) {
             warica<span className="text-main/40">.</span>
           </span>
         </div>
-        <div className="flex items-center gap-1">
-          <span
-            className="flex size-control items-center justify-center text-muted-foreground"
-            role="status"
-            title={saveLabel}
-          >
-            {!isLoaded ? (
-              <Spinner className="size-5 motion-reduce:animate-none" aria-hidden="true" />
-            ) : storageError || workspace.storageError ? (
-              <RotateCcw size={20} aria-hidden="true" />
-            ) : (
-              <CheckCheck size={20} aria-hidden="true" />
-            )}
-            <span className="sr-only">{saveLabel}</span>
-          </span>
-          <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
-            <DropdownMenuTrigger asChild>
-              <Button
-                ref={menuTrigger}
-                variant="ghost"
-                size="icon"
-                aria-label="メニュー"
-                title="メニュー"
-              >
-                <MoreHorizontal className="size-5" aria-hidden="true" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              align="end"
-              onCloseAutoFocus={(event) => {
-                if (!pendingRefresh.current) return;
-                event.preventDefault();
-                pendingRefresh.current = false;
-                menuTrigger.current?.focus();
-                void refresh();
-              }}
-            >
-              <DropdownMenuItem
-                disabled={!isLoaded || loadBlocked}
-                onSelect={() => {
-                  pendingRefresh.current = true;
-                }}
-              >
-                <RefreshCw aria-hidden="true" />
-                リフレッシュ
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+        <IconAction
+          label="リフレッシュ"
+          icon={RefreshCw}
+          variant="secondary"
+          disabled={!isLoaded || loadBlocked}
+          onClick={(event) => {
+            event.currentTarget.focus();
+            void refresh();
+          }}
+        />
       </header>
       <div className="grid min-h-0 items-start gap-6 max-lg:flex-1 max-lg:grid-rows-[minmax(0,1fr)] max-lg:pb-[calc(5.5rem+env(safe-area-inset-bottom))] lg:grid-cols-[12rem_minmax(0,1fr)] lg:gap-12">
         <aside className="contents lg:sticky lg:top-8 lg:block lg:min-w-0">
