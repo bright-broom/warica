@@ -12,6 +12,7 @@ import {
   ChartNoAxesColumn,
   ArrowDownLeft,
   ArrowUpRight,
+  PartyPopper,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { IconAction, IconLink } from '@/components/IconAction';
@@ -73,6 +74,10 @@ export default function ResultPage() {
         </Notice>
       )}
       <Panel tone="inverse" className="space-y-4 border-t-4 border-t-accent py-6 sm:py-8">
+        <div className="pop-only pop-result-tag">
+          <PartyPopper size={20} aria-hidden="true" />
+          おつかれさま！
+        </div>
         <p className="text-sm text-sub/75 wrap-anywhere">{state.eventName}</p>
         <div>
           <span className="sr-only">合計</span>

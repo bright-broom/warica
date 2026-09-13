@@ -36,6 +36,8 @@ export function Panel({
   return (
     <Card
       {...props}
+      data-ui="panel"
+      data-tone={tone}
       className={cn(
         'block min-w-0 rounded-panel p-4 shadow-sm shadow-main/5 sm:p-6',
         panelTones[tone],
@@ -54,7 +56,10 @@ export function SectionHeader({
   children?: ReactNode;
 }) {
   return (
-    <CardHeader className="mb-4 flex min-h-8 flex-row items-center gap-2.5 p-0">
+    <CardHeader
+      data-ui="section-header"
+      className="mb-4 flex min-h-8 flex-row items-center gap-2.5 p-0"
+    >
       <Icon className="size-[21px]" aria-hidden="true" />
       <CardTitle className="text-sm font-semibold tracking-tight" role="heading" aria-level={2}>
         {title}
@@ -68,6 +73,7 @@ export function Badge({ children, className, ...props }: HTMLAttributes<HTMLSpan
     <BadgePrimitive
       variant="secondary"
       {...props}
+      data-ui="badge"
       className={cn(
         'gap-1.5 rounded-full border-0 bg-main/5 px-3 py-1.5 text-xs font-semibold tabular-nums',
         className,

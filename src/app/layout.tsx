@@ -3,6 +3,8 @@ import { WarikanProvider } from './useWarikanStore';
 import { PaymentWorkspaceProvider } from '@/components/PaymentWorkspace';
 import { ApplicationUI } from '@/components/ApplicationUI';
 import { AppShell } from '@/components/AppShell';
+import { AppearanceProvider } from '@/components/AppearanceProvider';
+import { appearanceScript } from '@/design/appearance';
 import { palette, themeVariables } from '@/design/theme';
 import './globals.css';
 
@@ -21,15 +23,20 @@ export const viewport: Viewport = {
 };
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ja" style={themeVariables}>
+    <html lang="ja" style={themeVariables} data-appearance="pop" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: appearanceScript }} />
+      </head>
       <body>
-        <ApplicationUI>
-          <WarikanProvider>
-            <PaymentWorkspaceProvider>
-              <AppShell>{children}</AppShell>
-            </PaymentWorkspaceProvider>
-          </WarikanProvider>
-        </ApplicationUI>
+        <AppearanceProvider>
+          <ApplicationUI>
+            <WarikanProvider>
+              <PaymentWorkspaceProvider>
+                <AppShell>{children}</AppShell>
+              </PaymentWorkspaceProvider>
+            </WarikanProvider>
+          </ApplicationUI>
+        </AppearanceProvider>
       </body>
     </html>
   );

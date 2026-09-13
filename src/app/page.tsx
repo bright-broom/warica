@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { IconChoices } from '@/components/IconChoices';
+import { PopWelcome } from '@/components/PopWelcome';
 import { IconAction, IconLink } from '@/components/IconAction';
 import { ActionRow, Avatar, Badge, Notice, Panel, SectionHeader, TextInput } from '@/components/ui';
 import { navigation, routes } from '@/config/navigation';
@@ -47,6 +48,7 @@ export default function HomePage() {
   return (
     <>
       <h1 className="sr-only">メンバー</h1>
+      <PopWelcome />
       <Panel tone="soft">
         <SectionHeader icon={Coffee} title="イベント" />
         <Label htmlFor="event-name" className="sr-only">
