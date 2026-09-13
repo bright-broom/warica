@@ -25,6 +25,17 @@ async function inspect(directory) {
     ) {
       errors.push(`${file}: use main, sub or accent color roles`);
     }
+    if (file.endsWith('.tsx') && !file.startsWith('src/components/ui/')) {
+      if (/<(?:input|select|option|textarea|button|label|details|summary)\b/.test(source)) {
+        errors.push(`${file}: use shadcn/ui primitives through the shared components`);
+      }
+      if (/window\.(?:confirm|alert)\s*\(/.test(source)) {
+        errors.push(`${file}: use the shared shadcn confirmation or alert`);
+      }
+      if (/<(?:svg|path)\b/.test(source)) {
+        errors.push(`${file}: use Lucide icons`);
+      }
+    }
     if (file.startsWith('src/app/') && file.endsWith('/page.tsx')) {
       if (/\bAppShell\b|\bWarikanProvider\b|import\s.*\.css/.test(source)) {
         errors.push(`${file}: layout and theme belong to the root layout`);

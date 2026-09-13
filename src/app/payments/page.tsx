@@ -1,9 +1,8 @@
 'use client';
-import { useState } from 'react';
 import { ArrowLeft, ArrowRight, Wallet, ReceiptText } from 'lucide-react';
 import { IconAction, IconLink } from '@/components/IconAction';
 import { ActionRow, Badge, Notice } from '@/components/ui';
-import { Feedback } from '@/components/ui/Feedback';
+import { toast } from 'sonner';
 import { usePaymentWorkspace } from '@/components/PaymentWorkspace';
 import { PaymentEditor } from '@/components/PaymentEditor';
 import { PaymentHistory } from '@/components/PaymentHistory';
@@ -14,12 +13,8 @@ import { yen } from '@/lib/calculations';
 export default function PaymentsPage() {
   const { state, total } = useWarikanStore();
   const workspace = usePaymentWorkspace();
-  const [feedback, setFeedback] = useState<{ id: number; message: string } | null>(null);
   function complete({ amount, edited }: { amount: number; edited: boolean }) {
-    setFeedback((current) => ({
-      id: (current?.id ?? 0) + 1,
-      message: `${yen(amount)} ${edited ? '更新しました' : '追加しました'}`,
-    }));
+    toast.success(`${yen(amount)} ${edited ? '更新しました' : '追加しました'}`);
   }
   return (
     <>
@@ -40,7 +35,6 @@ export default function PaymentsPage() {
         <Notice>旧データは全員で仮計算。対象者を確認してください。</Notice>
       )}
       <PaymentEditor onDone={complete} />
-      {feedback && <Feedback key={feedback.id} message={feedback.message} />}
       {!!state.payments.length && (
         <PaymentHistory
           onEdit={(payment) => {

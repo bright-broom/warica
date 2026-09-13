@@ -1,8 +1,53 @@
 @import 'tailwindcss';
+@import 'tw-animate-css';
+
+:root {
+  --background: var(--brand-sub);
+  --foreground: var(--brand-main);
+  --card: var(--brand-sub);
+  --card-foreground: var(--brand-main);
+  --popover: var(--brand-sub);
+  --popover-foreground: var(--brand-main);
+  --primary: var(--brand-accent);
+  --primary-foreground: var(--brand-main);
+  --secondary: var(--brand-sub);
+  --secondary-foreground: var(--brand-main);
+  --muted: var(--brand-sub);
+  --muted-foreground: color-mix(in srgb, var(--brand-main) 65%, var(--brand-sub));
+  --accent-foreground: var(--brand-main);
+  --destructive: var(--brand-main);
+  --destructive-foreground: var(--brand-sub);
+  --border: color-mix(in srgb, var(--brand-main) 15%, var(--brand-sub));
+  --input: color-mix(in srgb, var(--brand-main) 20%, var(--brand-sub));
+  --ring: var(--brand-main);
+  --radius: 0.875rem;
+}
 
 /* Expose only the three shared brand roles to Tailwind utilities. */
 @theme inline {
   --color-*: initial;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 4px);
+  --radius-xl: 1.5rem;
   --color-main: var(--brand-main);
   --color-sub: var(--brand-sub);
   --color-accent: var(--brand-accent);
@@ -39,17 +84,6 @@
   }
   ::selection {
     @apply bg-accent text-main;
-  }
-}
-
-@keyframes feedback-in {
-  from {
-    opacity: 0;
-    transform: translateY(-0.5rem);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
   }
 }
 

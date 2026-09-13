@@ -1,34 +1,21 @@
+'use client';
 import Link from 'next/link';
 import type { ButtonHTMLAttributes } from 'react';
 import type { LucideIcon } from 'lucide-react';
-import { cx } from './ui';
+import { cn } from '@/lib/utils';
+import { Button } from './ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 
-const variants = {
-  primary: 'border-main/5 bg-accent text-main hover:bg-accent/70',
-  secondary: 'border-main/15 bg-sub text-main hover:bg-accent/20',
-  ghost: 'border-transparent text-main/70 hover:bg-main/5 hover:text-main',
-};
-const sizes = { default: 'size-control', large: 'h-14 w-20' };
-
+const variants = { primary: 'default', secondary: 'outline', ghost: 'ghost' } as const;
 type IconProps = {
   label: string;
   icon: LucideIcon;
   className?: string;
   variant?: keyof typeof variants;
-  size?: keyof typeof sizes;
+  size?: 'default' | 'large';
 };
-const actionStyle = (
-  variant: keyof typeof variants,
-  size: keyof typeof sizes,
-  className?: string,
-) =>
-  cx(
-    'inline-flex shrink-0 items-center justify-center rounded-control border transition-colors aria-pressed:bg-accent/25 aria-pressed:text-main disabled:cursor-not-allowed disabled:opacity-30',
-    variants[variant],
-    sizes[size],
-    className,
-  );
-
+const style =
+  'border border-transparent aria-pressed:bg-accent/25 aria-pressed:text-main disabled:cursor-not-allowed disabled:opacity-30';
 export function IconAction({
   label,
   icon: Icon,
@@ -39,18 +26,23 @@ export function IconAction({
   ...props
 }: IconProps & Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children'>) {
   return (
-    <button
-      {...props}
-      type={type}
-      className={actionStyle(variant, size, className)}
-      aria-label={label}
-      title={label}
-    >
-      <Icon size={20} aria-hidden="true" />
-    </button>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          {...props}
+          type={type}
+          variant={variants[variant]}
+          size={size === 'large' ? 'icon-lg' : 'icon'}
+          className={cn(style, className)}
+          aria-label={label}
+        >
+          <Icon className="size-5" aria-hidden="true" />
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent sideOffset={6}>{label}</TooltipContent>
+    </Tooltip>
   );
 }
-
 export function IconLink({
   label,
   icon: Icon,
@@ -60,13 +52,20 @@ export function IconLink({
   size = 'default',
 }: IconProps & { href: string }) {
   return (
-    <Link
-      href={href}
-      className={actionStyle(variant, size, className)}
-      aria-label={label}
-      title={label}
-    >
-      <Icon size={20} aria-hidden="true" />
-    </Link>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          asChild
+          variant={variants[variant]}
+          size={size === 'large' ? 'icon-lg' : 'icon'}
+          className={cn(style, className)}
+        >
+          <Link href={href} aria-label={label}>
+            <Icon className="size-5" aria-hidden="true" />
+          </Link>
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent sideOffset={6}>{label}</TooltipContent>
+    </Tooltip>
   );
 }

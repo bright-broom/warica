@@ -1,6 +1,6 @@
 # WARICAのデザイン管理
 
-Tailwind CSS 4.3のテーマ変数と共通React部品で、3画面を管理します。
+Tailwind CSS 4.3、shadcn/ui（Radix）、Lucideで3画面を管理します。基礎部品はshadcn CLI 4.21.0の公式new-yorkレジストリから導入し、アプリ固有のプリセットを重ねています。
 
 ## 変更する場所
 
@@ -47,4 +47,35 @@ Tailwind CSS 4.3のテーマ変数と共通React部品で、3画面を管理し�
 
 `PaymentWorkspaceProvider` は未登録の支払いと編集中の支払いを別々に保持します。ページを往復しても入力は残り、編集キャンセルでは元の未登録入力へ戻ります。新規追加後は支払者・対象者を残し、金額へフォーカスを戻します。イベントのリセット・インポート・再読み込みでは下書きを破棄します。下書きはメモリだけに置き、バックアップや精算計算へ含めません。
 
-通知は共通の `Feedback`、大きな金額欄は `TextInput` の `amount` バリアントを使用します。動きを減らす端末設定ではアニメーションとトランジションを抑制します。
+通知はshadcn/uiのSonner、大きな金額欄は `TextInput` の `amount` バリアントを使用します。動きを減らす端末設定ではアニメーションとトランジションを抑制します。
+
+## shadcn/uiとLucideへの対応
+
+| 役割                             | 使用するshadcn/ui部品                     |
+| -------------------------------- | ----------------------------------------- |
+| アイコン操作と移動               | Button / Tooltip                          |
+| イベント・支払い内容の候補       | Toggle Group / Toggle / Tooltip           |
+| 金額・名前・内容・ファイル       | Input / Label / Field                     |
+| 支払者                           | Native Select / Native Select Option      |
+| 対象者                           | Checkbox / Label / FieldSet / FieldLegend |
+| 共有テキスト                     | Textarea                                  |
+| カード・見出し                   | Card / CardHeader / CardTitle             |
+| 件数・メンバー表示               | Badge / Avatar / AvatarFallback           |
+| 注意・エラー                     | Alert / AlertDescription                  |
+| 計算ヘルプ                       | Collapsible / Button                      |
+| データ未登録                     | Empty / EmptyMedia / EmptyContent         |
+| 削除・リセット・インポートの確認 | Alert Dialog                              |
+| 完了通知                         | Sonner                                    |
+| 読み込み                         | Spinner（Lucide）                         |
+
+`src/components/ui/` の小文字ファイルがshadcnの基礎部品です。`index.tsx`、`IconAction`、`IconChoices`はWARICA用の組み合わせ・サイズ指定を担当し、基礎部品の動作を再実装しません。クラスの競合は共通の `src/lib/utils.ts` の `cn`（clsx + tailwind-merge）で解消します。
+
+`ApplicationUI` はRootLayoutに一度だけ置き、TooltipProvider・確認ダイアログ・Toasterを全ページへ提供します。確認ダイアログはキャンセルを初期フォーカスとし、閉じたら起点の操作へ戻します。イベントを置き換えた場合は本文へ戻します。
+
+shadcnの `background`・`foreground`・`primary`・`destructive` などは新しい色ではなく、既存の3色への意味上の別名です。`globals.css` で接続しています。destructiveもメイン色を使い、文言と確認操作で区別します。
+
+Lucideは1.45.0。独自のSVGアイコンは持たず、faviconも `generate:icons` で同じSplitコンポーネントから生成します。生成物 `src/design/brand-mark.json` はコミットし、本番ビルド時にも再生成します。
+
+部品追加は `pnpm dlx shadcn@4.21.0 add <component>` を使用します。`components.json` を設定元とし、取り込み後は3色テーマ・48pxの主要操作領域を確認してください。CLIが `cn` パッケージから取り込んだ場合は共通の `@/lib/utils` に揃えます。
+
+公式仕様: [shadcn/ui](https://ui.shadcn.com/docs/components) / [テーマ](https://ui.shadcn.com/docs/theming) / [Lucide](https://lucide.dev/guide/packages/lucide-react)

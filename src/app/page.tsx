@@ -12,6 +12,8 @@ import {
   Utensils,
   House,
 } from 'lucide-react';
+import { Label } from '@/components/ui/label';
+import { IconChoices } from '@/components/IconChoices';
 import { IconAction, IconLink } from '@/components/IconAction';
 import { ActionRow, Avatar, Badge, Notice, Panel, SectionHeader, TextInput } from '@/components/ui';
 import { navigation, routes } from '@/config/navigation';
@@ -47,9 +49,9 @@ export default function HomePage() {
       <h1 className="sr-only">メンバー</h1>
       <Panel tone="soft">
         <SectionHeader icon={Coffee} title="イベント" />
-        <label htmlFor="event-name" className="sr-only">
+        <Label htmlFor="event-name" className="sr-only">
           イベント名
-        </label>
+        </Label>
         <TextInput
           id="event-name"
           className="border-main/10 bg-sub/70 text-lg font-semibold"
@@ -59,20 +61,17 @@ export default function HomePage() {
           maxLength={50}
           autoComplete="off"
         />
-        <div className="mt-3 flex gap-2">
-          {[
-            { label: '週末の旅行', icon: Plane },
-            { label: 'みんなでごはん', icon: Utensils },
-            { label: 'ホームパーティー', icon: House },
-          ].map(({ label, icon }) => (
-            <IconAction
-              key={label}
-              label={label}
-              icon={icon}
-              aria-pressed={state.eventName === label}
-              onClick={() => setEventName(label)}
-            />
-          ))}
+        <div className="mt-3">
+          <IconChoices
+            label="イベントの候補"
+            value={state.eventName}
+            onValueChange={setEventName}
+            choices={[
+              { label: '週末の旅行', icon: Plane },
+              { label: 'みんなでごはん', icon: Utensils },
+              { label: 'ホームパーティー', icon: House },
+            ]}
+          />
         </div>
       </Panel>
       <Panel>
@@ -80,9 +79,9 @@ export default function HomePage() {
           <Badge>{state.members.length}人</Badge>
         </SectionHeader>
         <form className="flex items-center gap-2" onSubmit={add}>
-          <label htmlFor="member-name" className="sr-only">
+          <Label htmlFor="member-name" className="sr-only">
             メンバーの名前
-          </label>
+          </Label>
           <TextInput
             id="member-name"
             ref={nameRef}
@@ -111,9 +110,9 @@ export default function HomePage() {
               <li key={member.id} className="flex min-w-0 items-center gap-2 py-2">
                 {editId === member.id ? (
                   <div className="flex min-w-0 flex-1 items-center gap-1">
-                    <label htmlFor="edit-member" className="sr-only">
+                    <Label htmlFor="edit-member" className="sr-only">
                       新しい名前
-                    </label>
+                    </Label>
                     <TextInput
                       id="edit-member"
                       value={editName}

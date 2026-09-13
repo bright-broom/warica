@@ -1,3 +1,4 @@
+'use client';
 import type {
   HTMLAttributes,
   InputHTMLAttributes,
@@ -7,30 +8,42 @@ import type {
   Ref,
 } from 'react';
 import { Info, TriangleAlert, type LucideIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Card, CardHeader, CardTitle } from './card';
+import { Badge as BadgePrimitive } from './badge';
+import { Avatar as AvatarPrimitive, AvatarFallback } from './avatar';
+import { Input } from './input';
+import { Textarea } from './textarea';
+import { NativeSelect } from './native-select';
+import { Field as FieldPrimitive, FieldLabel } from './field';
+import { Alert, AlertDescription } from './alert';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './collapsible';
+import { Button } from './button';
+import { Empty, EmptyMedia, EmptyContent } from './empty';
 
-export const cx = (...values: (string | false | undefined)[]) => values.filter(Boolean).join(' ');
-
+// Domain presets compose shadcn/ui; the base primitives own behavior and styling.
+export const cx = cn;
 const panelTones = {
   default: 'border-main/10 bg-sub',
   soft: 'border-accent/30 bg-accent/15',
   inverse: 'border-main bg-main text-sub',
 };
-
 export function Panel({
   tone = 'default',
   className,
   ...props
-}: HTMLAttributes<HTMLElement> & {
-  tone?: keyof typeof panelTones;
-}) {
+}: HTMLAttributes<HTMLDivElement> & { tone?: keyof typeof panelTones }) {
   return (
-    <section
+    <Card
       {...props}
-      className={cx('min-w-0 rounded-panel border p-5 sm:p-7', panelTones[tone], className)}
+      className={cn(
+        'block min-w-0 rounded-panel p-5 shadow-none sm:p-7',
+        panelTones[tone],
+        className,
+      )}
     />
   );
 }
-
 export function SectionHeader({
   icon: Icon,
   title,
@@ -41,44 +54,42 @@ export function SectionHeader({
   children?: ReactNode;
 }) {
   return (
-    <div className="mb-5 flex min-h-8 items-center gap-3">
-      <Icon size={21} aria-hidden="true" />
-      <h2 className="sr-only">{title}</h2>
+    <CardHeader className="mb-5 flex min-h-8 flex-row items-center gap-3 p-0">
+      <Icon className="size-[21px]" aria-hidden="true" />
+      <CardTitle className="sr-only" role="heading" aria-level={2}>
+        {title}
+      </CardTitle>
       <div className="ml-auto flex items-center gap-2">{children}</div>
-    </div>
+    </CardHeader>
   );
 }
-
 export function Badge({ children, className, ...props }: HTMLAttributes<HTMLSpanElement>) {
   return (
-    <span
+    <BadgePrimitive
+      variant="secondary"
       {...props}
-      className={cx(
-        'inline-flex items-center gap-1.5 rounded-full bg-main/5 px-3 py-1.5 text-xs font-semibold tabular-nums',
+      className={cn(
+        'gap-1.5 rounded-full border-0 bg-main/5 px-3 py-1.5 text-xs font-semibold tabular-nums',
         className,
       )}
     >
       {children}
-    </span>
+    </BadgePrimitive>
   );
 }
-
 export function Avatar({ name }: { name: string }) {
   return (
-    <span
-      aria-hidden="true"
-      className="flex size-9 shrink-0 items-center justify-center rounded-full bg-accent/35 text-sm font-semibold ring-2 ring-sub"
-    >
-      {Array.from(name)[0] || '?'}
-    </span>
+    <AvatarPrimitive aria-hidden="true" className="size-9 shrink-0 ring-2 ring-sub">
+      <AvatarFallback className="bg-accent/35 text-sm font-semibold text-main">
+        {Array.from(name)[0] || '?'}
+      </AvatarFallback>
+    </AvatarPrimitive>
   );
 }
-
 const fieldStyle =
-  'min-h-control w-full min-w-0 rounded-control border border-main/15 bg-sub px-4 py-3 text-main placeholder:text-main/50 transition-colors hover:border-main/35 focus:border-main focus:outline-2 focus:outline-offset-2 focus:outline-main disabled:opacity-40';
-
+  'min-h-control min-w-0 rounded-control border-main/15 bg-sub px-4 py-3 text-base text-main shadow-none placeholder:text-main/50 hover:border-main/35 focus-visible:border-main focus-visible:ring-main/20 disabled:opacity-40';
 const inputVariants = {
-  default: 'text-base',
+  default: '',
   amount:
     'h-20 border-main/10 bg-accent/10 pl-10 pr-3 text-3xl font-semibold tracking-tight tabular-nums sm:text-4xl',
 };
@@ -90,16 +101,19 @@ export function TextInput({
   variant?: keyof typeof inputVariants;
   ref?: Ref<HTMLInputElement>;
 }) {
-  return <input {...props} className={cx(fieldStyle, inputVariants[variant], className)} />;
+  return <Input {...props} className={cn(fieldStyle, inputVariants[variant], className)} />;
 }
-export function SelectInput({ className, ...props }: SelectHTMLAttributes<HTMLSelectElement>) {
-  return <select {...props} className={cx(fieldStyle, 'pr-8 text-base', className)} />;
+export function SelectInput({
+  className,
+  ...props
+}: Omit<SelectHTMLAttributes<HTMLSelectElement>, 'size'>) {
+  return <NativeSelect {...props} className={cn(fieldStyle, 'pr-9', className)} />;
 }
 export function TextArea({ className, ...props }: TextareaHTMLAttributes<HTMLTextAreaElement>) {
   return (
-    <textarea
+    <Textarea
       {...props}
-      className={cx(fieldStyle, 'min-h-60 resize-y text-sm leading-7', className)}
+      className={cn(fieldStyle, 'min-h-60 resize-y text-sm leading-7', className)}
     />
   );
 }
@@ -115,56 +129,56 @@ export function Field({
   children: ReactNode;
 }) {
   return (
-    <div className="min-w-0 space-y-2">
-      <label
+    <FieldPrimitive className="min-w-0 gap-2">
+      <FieldLabel
         htmlFor={id}
         title={label}
         className={Icon ? 'flex h-6 items-center text-main/65' : 'sr-only'}
       >
         {Icon && <Icon size={18} aria-hidden="true" />}
         <span className="sr-only">{label}</span>
-      </label>
+      </FieldLabel>
       {children}
-    </div>
+    </FieldPrimitive>
   );
 }
-
 export function Notice({ children, alert = false }: { children: ReactNode; alert?: boolean }) {
   return (
-    <div
+    <Alert
       role={alert ? 'alert' : 'status'}
-      className="flex items-start gap-3 rounded-control border border-main/20 bg-accent/15 p-4 text-sm leading-6 wrap-anywhere"
+      className="grid-cols-[1.25rem_minmax(0,1fr)] gap-3 rounded-control border-main/20 bg-accent/15 p-4 text-main"
     >
-      <TriangleAlert size={19} className="mt-0.5" aria-hidden="true" />
-      <div className="min-w-0 flex-1">{children}</div>
-    </div>
+      <TriangleAlert size={19} aria-hidden="true" />
+      <AlertDescription className="block min-w-0 text-sm leading-6 text-main wrap-anywhere">
+        {children}
+      </AlertDescription>
+    </Alert>
   );
 }
-
 export function Help({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <details className="group mt-3 text-xs leading-6 text-main/70">
-      <summary
-        aria-label={label}
-        title={label}
-        className="flex size-control list-none items-center justify-center rounded-control hover:bg-main/5 [&::-webkit-details-marker]:hidden"
-      >
-        <Info size={18} aria-hidden="true" />
-      </summary>
-      <p className="py-2">{children}</p>
-    </details>
+    <Collapsible className="mt-3 text-xs leading-6 text-main/70">
+      <CollapsibleTrigger asChild>
+        <Button variant="ghost" size="icon" aria-label={label} title={label}>
+          <Info className="size-[18px]" aria-hidden="true" />
+        </Button>
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <p className="py-2">{children}</p>
+      </CollapsibleContent>
+    </Collapsible>
   );
 }
-
 export function EmptyState({ icon: Icon, children }: { icon: LucideIcon; children: ReactNode }) {
   return (
-    <div className="flex flex-col items-center gap-4 py-10 text-center text-sm leading-6 wrap-anywhere">
-      <Icon size={32} className="text-main/50" aria-hidden="true" />
-      {children}
-    </div>
+    <Empty className="gap-4 rounded-panel px-0 py-10 text-sm leading-6 wrap-anywhere md:p-10">
+      <EmptyMedia>
+        <Icon size={32} className="text-main/50" aria-hidden="true" />
+      </EmptyMedia>
+      <EmptyContent>{children}</EmptyContent>
+    </Empty>
   );
 }
-
 export function ActionRow({ children }: { children: ReactNode }) {
   return <div className="flex items-center justify-end gap-3 pt-2">{children}</div>;
 }
