@@ -181,16 +181,16 @@ export function PaymentEditor({
               }
             />
           </div>
-          <div className="flex flex-wrap gap-1.5">
+          <div className="grid gap-1.5">
             {members.map((member) => (
               <Label
                 key={member.id}
                 htmlFor={`participant-${member.id}`}
-                className="relative flex min-h-control max-w-full cursor-pointer items-center gap-2 rounded-control border border-main/15 px-2 py-2 text-sm transition-colors has-data-[state=checked]:border-main/30 has-data-[state=checked]:accent-soft has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-main"
+                className="relative flex min-h-control max-w-full cursor-pointer flex-row-reverse items-center gap-3 rounded-control border border-main/15 pl-3 pr-0 text-sm transition-colors has-data-[state=checked]:border-main/30 has-data-[state=checked]:accent-soft has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-main"
               >
                 <Checkbox
                   id={`participant-${member.id}`}
-                  className="border-main/30 data-[state=checked]:border-main data-[state=checked]:bg-main data-[state=checked]:text-accent"
+                  className="relative size-control rounded-control border-0 shadow-none data-[state=checked]:bg-main/0 after:absolute after:inset-3.5 after:rounded-sm after:border after:border-main/40 data-[state=checked]:text-main data-[state=checked]:after:border-main [&_svg]:size-4"
                   checked={participants.includes(member.id)}
                   onCheckedChange={(checked) =>
                     updateDraft({
@@ -201,7 +201,7 @@ export function PaymentEditor({
                     })
                   }
                 />
-                <span className="min-w-0 wrap-anywhere">{member.name}</span>
+                <span className="min-w-0 flex-1 wrap-anywhere">{member.name}</span>
               </Label>
             ))}
           </div>

@@ -19,6 +19,7 @@ export function IconChoices({
     <ToggleGroup
       type="single"
       spacing={1}
+      className="ml-auto flex max-w-[6.25rem] flex-wrap justify-end sm:max-w-none"
       aria-label={label}
       value={value}
       onValueChange={(next) => {

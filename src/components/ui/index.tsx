@@ -24,8 +24,8 @@ import { Empty, EmptyMedia, EmptyContent } from './empty';
 // Domain presets compose shadcn/ui; the base primitives own behavior and styling.
 export const cx = cn;
 const panelTones = {
-  default: 'border-main/10 bg-sub',
-  soft: 'border-accent/30 accent-faint',
+  default: 'border-main/15 bg-sub',
+  soft: 'border-main/15 border-t-4 border-t-accent bg-sub',
   inverse: 'border-main bg-main text-sub',
 };
 export function Panel({
@@ -37,7 +37,7 @@ export function Panel({
     <Card
       {...props}
       className={cn(
-        'block min-w-0 rounded-panel p-5 shadow-none sm:p-7',
+        'block min-w-0 rounded-panel p-4 shadow-sm shadow-main/5 sm:p-6',
         panelTones[tone],
         className,
       )}
@@ -54,9 +54,9 @@ export function SectionHeader({
   children?: ReactNode;
 }) {
   return (
-    <CardHeader className="mb-5 flex min-h-8 flex-row items-center gap-3 p-0">
+    <CardHeader className="mb-4 flex min-h-8 flex-row items-center gap-2.5 p-0">
       <Icon className="size-[21px]" aria-hidden="true" />
-      <CardTitle className="sr-only" role="heading" aria-level={2}>
+      <CardTitle className="text-sm font-semibold tracking-tight" role="heading" aria-level={2}>
         {title}
       </CardTitle>
       <div className="ml-auto flex items-center gap-2">{children}</div>
@@ -87,11 +87,11 @@ export function Avatar({ name }: { name: string }) {
   );
 }
 const fieldStyle =
-  'min-h-control min-w-0 rounded-control border-main/15 bg-sub px-4 py-3 text-base text-main shadow-none placeholder:text-muted-foreground hover:border-main/35 focus-visible:border-main focus-visible:ring-main/20 disabled:opacity-40';
+  'min-h-control min-w-0 rounded-control border-main/25 bg-sub px-4 py-3 text-base text-main shadow-none placeholder:text-muted-foreground hover:border-main/35 focus-visible:border-main focus-visible:ring-main/20 disabled:opacity-40';
 const inputVariants = {
   default: '',
   amount:
-    'h-20 border-main/10 accent-faint pl-10 pr-3 text-3xl font-semibold tracking-tight tabular-nums sm:text-4xl',
+    'h-20 border-main/25 accent-faint pl-10 pr-3 text-3xl font-semibold tracking-tight tabular-nums sm:text-4xl',
 };
 export function TextInput({
   className,
@@ -159,7 +159,13 @@ export function Help({ label, children }: { label: string; children: ReactNode }
   return (
     <Collapsible className="mt-3 text-xs leading-6 text-muted-foreground">
       <CollapsibleTrigger asChild>
-        <Button variant="ghost" size="icon" aria-label={label} title={label}>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="ml-auto flex"
+          aria-label={label}
+          title={label}
+        >
           <Info className="size-[18px]" aria-hidden="true" />
         </Button>
       </CollapsibleTrigger>
@@ -175,7 +181,7 @@ export function EmptyState({ icon: Icon, children }: { icon: LucideIcon; childre
       <EmptyMedia>
         <Icon size={32} className="text-muted-foreground" aria-hidden="true" />
       </EmptyMedia>
-      <EmptyContent>{children}</EmptyContent>
+      <EmptyContent className="items-end text-right">{children}</EmptyContent>
     </Empty>
   );
 }
