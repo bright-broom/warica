@@ -13,6 +13,7 @@ import {
   ArrowDownLeft,
   ArrowUpRight,
 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { IconAction, IconLink } from '@/components/IconAction';
 import {
   ActionRow,
@@ -52,7 +53,7 @@ export default function ResultPage() {
       await navigator.clipboard.writeText(value);
       setCopiedText(value);
       setShowText(false);
-      setMessage('精算結果をコピーしました。チャットに貼り付けて共有できます。');
+      setMessage('コピーしました。LINEに貼り付けて送れます。');
     } catch {
       setShareText(value);
       setShowText(true);
@@ -96,13 +97,19 @@ export default function ResultPage() {
       <Panel>
         <SectionHeader icon={ArrowRightLeft} title="送金">
           <Badge>{settlements.length}件</Badge>
-          <IconAction
-            label="精算結果をコピー"
-            icon={copiedText === text ? Check : Copy}
-            variant="primary"
-            onClick={() => void copy()}
-          />
         </SectionHeader>
+        <Button
+          className="mb-5 w-full gap-2 rounded-control"
+          aria-label="送金一覧を一括コピー"
+          onClick={() => void copy()}
+        >
+          {copiedText === text ? (
+            <Check className="size-5" aria-hidden="true" />
+          ) : (
+            <Copy className="size-5" aria-hidden="true" />
+          )}
+          一括コピー
+        </Button>
         {settlements.length ? (
           <ol data-testid="transfer-list" className="divide-y divide-main/10">
             {settlements.map((settlement, i) => (
@@ -136,7 +143,7 @@ export default function ResultPage() {
             <h3>精算不要</h3>
           </EmptyState>
         )}
-        <p className={showText ? 'my-4 text-sm leading-6' : 'sr-only'} role="status">
+        <p className={message ? 'my-4 text-sm leading-6' : 'sr-only'} role="status">
           {message}
         </p>
         {showText && (

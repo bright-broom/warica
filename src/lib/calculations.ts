@@ -90,17 +90,8 @@ export function settlementText(state: WarikanState): string {
     ...(transfers.length
       ? transfers.map((s) => `${s.from} → ${s.to}：${yen(s.amount)}`)
       : ['送金は不要です。']),
-    '',
-    '【支払いの内訳】',
-    ...state.payments.map(
-      (p) =>
-        `${p.memo || '立て替え'}：${yen(p.amount)}（${state.members.find((m) => m.id === p.payerId)?.name}が支払い / 対象：${p.participantIds.map((id) => state.members.find((m) => m.id === id)?.name).join('、')}）`,
-    ),
     ...(state.payments.some((p) => p.needsReview)
       ? ['', '※ 旧バージョンの記録があります。割り勘の対象者を確認してください。']
       : []),
-    '',
-    '1円未満の端数は、支払いごとに対象者の登録順で1円ずつ配分しています。',
-    'WARICAで計算（送金は各自で行ってください）',
   ].join('\n');
 }

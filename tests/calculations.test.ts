@@ -142,7 +142,7 @@ test('invalid yen, foreign IDs and duplicate participants cannot enter the ledge
   assert.throws(() => calculateMemberBalances(members, [payment(1, ['missing'])]));
 });
 
-test('shared text includes exact transfers, participants and a legacy warning', () => {
+test('LINE copy includes exact transfers and preserves a legacy warning', () => {
   const text = settlementText({
     ...emptyState(),
     eventName: '京都旅行',
@@ -150,6 +150,6 @@ test('shared text includes exact transfers, participants and a legacy warning', 
     payments: [{ ...payment(3000, ['b']), needsReview: true }],
   });
   assert.match(text, /はる → あおい：¥3,000/);
-  assert.match(text, /対象：はる/);
+  assert.doesNotMatch(text, /【支払いの内訳】/);
   assert.match(text, /旧バージョン/);
 });
