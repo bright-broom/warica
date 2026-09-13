@@ -14,7 +14,7 @@
 
 @layer base {
   html {
-    @apply bg-sub text-main font-sans antialiased;
+    @apply bg-sub text-main font-sans antialiased scroll-pt-4 scroll-pb-28 lg:scroll-pb-8;
   }
   body {
     @apply min-w-0;
@@ -39,5 +39,26 @@
   }
   ::selection {
     @apply bg-accent text-main;
+  }
+}
+
+@keyframes feedback-in {
+  from {
+    opacity: 0;
+    transform: translateY(-0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

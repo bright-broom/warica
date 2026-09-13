@@ -35,12 +35,17 @@ export default function ResultPage() {
   const { state, balances, settlements, total } = useWarikanStore();
   const [message, setMessage] = useState('');
   const [showText, setShowText] = useState(false);
+  const [shareText, setShareText] = useState('');
+  const [copiedText, setCopiedText] = useState('');
   const text = settlementText(state);
-  async function copy() {
+  async function copy(value = text) {
     try {
-      await navigator.clipboard.writeText(text);
+      await navigator.clipboard.writeText(value);
+      setCopiedText(value);
+      setShowText(false);
       setMessage('精算結果をコピーしました。チャットに貼り付けて共有できます。');
     } catch {
+      setShareText(value);
       setShowText(true);
       setMessage('コピーできませんでした。下のテキストを選択してコピーしてください。');
     }
@@ -82,18 +87,24 @@ export default function ResultPage() {
       <Panel>
         <SectionHeader icon={ArrowRightLeft} title="送金">
           <Badge>{settlements.length}件</Badge>
+          <IconAction
+            label="精算結果をコピー"
+            icon={copiedText === text ? Check : Copy}
+            variant="primary"
+            onClick={() => void copy()}
+          />
         </SectionHeader>
         {settlements.length ? (
           <ol data-testid="transfer-list" className="divide-y divide-main/10">
             {settlements.map((settlement, i) => (
               <li
                 key={`${settlement.fromId}-${settlement.toId}`}
-                className="grid grid-cols-[1.25rem_minmax(0,1fr)] items-center gap-x-3 gap-y-2 py-5 first:pt-0 sm:grid-cols-[1.5rem_minmax(0,1fr)_auto]"
+                className="grid grid-cols-[1.25rem_minmax(0,1fr)_3rem] items-center gap-x-3 gap-y-2 py-5 first:pt-0 sm:grid-cols-[1.5rem_minmax(0,1fr)_auto_3rem]"
               >
                 <span className="text-xs text-main/45 tabular-nums" aria-hidden="true">
                   {String(i + 1).padStart(2, '0')}
                 </span>
-                <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_1rem_minmax(0,1fr)] items-center gap-2 text-sm font-medium wrap-anywhere">
+                <div className="col-span-2 grid min-w-0 grid-cols-[minmax(0,1fr)_1rem_minmax(0,1fr)] sm:col-span-1 items-center gap-2 text-sm font-medium wrap-anywhere">
                   <span>{settlement.from}</span>
                   <ArrowRight size={16} aria-label="から" />
                   <span>{settlement.to}</span>
@@ -101,6 +112,21 @@ export default function ResultPage() {
                 <strong className="col-start-2 w-fit rounded-control bg-accent/25 px-3 py-2 text-lg font-semibold tabular-nums sm:col-start-3">
                   {yen(settlement.amount)}
                 </strong>
+                <IconAction
+                  className="col-start-3 sm:col-start-4"
+                  label={`${settlement.from}から${settlement.to}への送金をコピー`}
+                  icon={
+                    copiedText ===
+                    `${state.eventName}\n${settlement.from} → ${settlement.to}：${yen(settlement.amount)}`
+                      ? Check
+                      : Copy
+                  }
+                  onClick={() =>
+                    void copy(
+                      `${state.eventName}\n${settlement.from} → ${settlement.to}：${yen(settlement.amount)}`,
+                    )
+                  }
+                />
               </li>
             ))}
           </ol>
@@ -109,20 +135,17 @@ export default function ResultPage() {
             <h3>精算不要</h3>
           </EmptyState>
         )}
-        <ActionRow>
-          <IconAction
-            label="精算結果をコピー"
-            icon={message && !showText ? Check : Copy}
-            variant="primary"
-            onClick={() => void copy()}
-          />
-        </ActionRow>
         <p className={showText ? 'my-4 text-sm leading-6' : 'sr-only'} role="status">
           {message}
         </p>
         {showText && (
           <Field id="share-text" label="共有用テキスト">
-            <TextArea id="share-text" value={text} readOnly onFocus={(e) => e.target.select()} />
+            <TextArea
+              id="share-text"
+              value={shareText}
+              readOnly
+              onFocus={(e) => e.target.select()}
+            />
           </Field>
         )}
       </Panel>

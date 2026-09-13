@@ -311,3 +311,95 @@ test('all routes inherit the shared theme and keep a single persistent shell', a
   await expect(page.getByTestId('app-shell')).toHaveAttribute('data-persisted', 'yes');
   await expect(page.getByLabel('イベント名', { exact: true })).toHaveValue('週末の京都旅行');
 });
+
+test('payment drafts survive route changes and continuous entry keeps payer and participants', async ({
+  page,
+}, testInfo) => {
+  await setup(page);
+  if (testInfo.project.name === 'mobile') {
+    await page.evaluate(() => window.scrollTo(0, 0));
+    const submit = await page.getByRole('button', { name: 'この支払いを追加する' }).boundingBox();
+    const dock = await page.getByRole('navigation', { name: '割り勘の手順' }).boundingBox();
+    expect(submit && dock && submit.y + submit.height <= dock.y).toBeTruthy();
+  }
+  await page.getByLabel('支払った人').selectOption({ label: 'はる' });
+  await page.getByLabel('金額', { exact: true }).fill('１２，８００');
+  await expect(page.getByLabel('金額', { exact: true })).toHaveValue('12800');
+  await page.getByLabel('金額', { exact: true }).press('Enter');
+  await expect(page.getByLabel('何の支払い？')).toBeFocused();
+  await page.getByRole('button', { name: '宿泊', exact: true }).click();
+  await page.getByRole('checkbox', { name: 'りく', exact: true }).uncheck();
+  await page.getByRole('link', { name: 'メンバー', exact: true }).click();
+  await page.getByRole('link', { name: '支払い', exact: true }).click();
+  await expect(page.getByLabel('金額', { exact: true })).toHaveValue('12800');
+  await expect(page.getByLabel('何の支払い？')).toHaveValue('宿泊');
+  await expect(page.getByRole('checkbox', { name: 'りく', exact: true })).not.toBeChecked();
+  await page.getByRole('button', { name: 'この支払いを追加する' }).click();
+  await expect(page.getByRole('status').filter({ hasText: '¥12,800 追加しました' })).toBeVisible();
+  await expect(page.getByLabel('金額', { exact: true })).toHaveValue('');
+  await expect(page.getByLabel('金額', { exact: true })).toBeFocused();
+  await expect(page.getByLabel('支払った人').locator('option:checked')).toHaveText('はる');
+  await expect(page.getByRole('checkbox', { name: 'りく', exact: true })).not.toBeChecked();
+  await page.getByLabel('金額', { exact: true }).fill('500');
+  await page.getByLabel('何の支払い？').fill('次の支払い');
+  await page.getByRole('button', { name: '宿泊を編集', exact: true }).click();
+  await page.getByLabel('金額', { exact: true }).fill('12000');
+  await page.getByRole('link', { name: '精算結果', exact: true }).click();
+  await page.getByRole('link', { name: '支払い', exact: true }).click();
+  await expect(page.getByLabel('金額', { exact: true })).toHaveValue('12000');
+  await page.getByRole('button', { name: '編集をキャンセル', exact: true }).click();
+  await expect(page.getByLabel('金額', { exact: true })).toHaveValue('500');
+  await expect(page.getByLabel('何の支払い？')).toHaveValue('次の支払い');
+  await page.getByRole('button', { name: 'この支払いを追加する' }).click();
+  await expect(page.getByTestId('payment-list').locator('li')).toHaveCount(2);
+  await noOverflow(page);
+});
+
+test('replacing an event clears drafts and individual transfers can be copied with a fallback', async ({
+  page,
+  context,
+}) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  await setup(page);
+  const backup = await page.evaluate((storageKey) => localStorage.getItem(storageKey)!, key);
+  await page.getByLabel('金額', { exact: true }).fill('999');
+  page.once('dialog', (dialog) => dialog.accept());
+  await page.getByLabel('バックアップファイル').setInputFiles({
+    name: 'backup.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(backup),
+  });
+  await page.getByRole('link', { name: '支払い', exact: true }).click();
+  await expect(page.getByLabel('金額', { exact: true })).toHaveValue('');
+  await page.getByLabel('金額', { exact: true }).fill('3000');
+  await page.getByRole('button', { name: 'この支払いを追加する' }).click();
+  await page.getByRole('link', { name: '精算結果', exact: true }).click();
+  await page.getByRole('button', { name: 'はるからあおいへの送金をコピー' }).click();
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(
+    '週末の京都旅行\nはる → あおい：¥1,000',
+  );
+  await page.evaluate(() =>
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText: () => Promise.reject(new Error('denied')) },
+    }),
+  );
+  await page.getByRole('button', { name: 'りくからあおいへの送金をコピー' }).click();
+  await expect(page.getByLabel('共有用テキスト')).toHaveValue(
+    '週末の京都旅行\nりく → あおい：¥1,000',
+  );
+  await page.getByRole('link', { name: '支払い', exact: true }).click();
+  await page.getByLabel('金額', { exact: true }).fill('800');
+  page.once('dialog', (dialog) => dialog.accept());
+  await page.getByRole('button', { name: '新しく始める', exact: true }).click();
+  await page.getByLabel('イベント名', { exact: true }).fill('新しい集まり');
+  for (const name of ['A', 'B']) {
+    await page.getByLabel('メンバーの名前', { exact: true }).fill(name);
+    await page.getByRole('button', { name: '追加', exact: true }).click();
+  }
+  await page.getByRole('link', { name: '支払い', exact: true }).click();
+  await expect(page.getByLabel('金額', { exact: true })).toHaveValue('');
+  await page.locator('footer').scrollIntoViewIfNeeded();
+  await expect(page.getByRole('navigation', { name: '割り勘の手順' })).toBeInViewport();
+  await noOverflow(page);
+});

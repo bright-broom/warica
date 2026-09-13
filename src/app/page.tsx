@@ -1,5 +1,5 @@
 'use client';
-import { useState, type FormEvent } from 'react';
+import { useRef, useState, type FormEvent } from 'react';
 import {
   ArrowRight,
   Check,
@@ -20,6 +20,7 @@ import { useWarikanStore } from './useWarikanStore';
 export default function HomePage() {
   const { state, setEventName, addMember, editMember, removeMember } = useWarikanStore();
   const [name, setName] = useState('');
+  const nameRef = useRef<HTMLInputElement>(null);
   const [editId, setEditId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [error, setError] = useState('');
@@ -30,6 +31,7 @@ export default function HomePage() {
     if (result.ok) {
       setName('');
       setError('');
+      nameRef.current?.focus();
     } else setError(result.error);
   }
   function saveEdit() {
@@ -63,7 +65,13 @@ export default function HomePage() {
             { label: 'みんなでごはん', icon: Utensils },
             { label: 'ホームパーティー', icon: House },
           ].map(({ label, icon }) => (
-            <IconAction key={label} label={label} icon={icon} onClick={() => setEventName(label)} />
+            <IconAction
+              key={label}
+              label={label}
+              icon={icon}
+              aria-pressed={state.eventName === label}
+              onClick={() => setEventName(label)}
+            />
           ))}
         </div>
       </Panel>
@@ -77,6 +85,7 @@ export default function HomePage() {
           </label>
           <TextInput
             id="member-name"
+            ref={nameRef}
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="名前"

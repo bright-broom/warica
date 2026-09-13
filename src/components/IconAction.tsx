@@ -23,7 +23,7 @@ const actionStyle = (
   className?: string,
 ) =>
   cx(
-    'inline-flex shrink-0 items-center justify-center rounded-control border transition-colors disabled:cursor-not-allowed disabled:opacity-30',
+    'inline-flex shrink-0 items-center justify-center rounded-control border transition-colors aria-pressed:bg-accent/25 aria-pressed:text-main disabled:cursor-not-allowed disabled:opacity-30',
     variants[variant],
     sizes[size],
     className,

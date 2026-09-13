@@ -98,7 +98,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       >
         本文へ移動
       </a>
-      <header className="flex h-24 items-center justify-between sm:h-32">
+      <header className="flex h-20 items-center justify-between sm:h-24">
         <Link
           href={routes.members}
           className="flex items-center gap-3 text-3xl font-bold tracking-tight"
@@ -127,8 +127,11 @@ export function AppShell({ children }: { children: ReactNode }) {
         </span>
       </header>
       <div className="grid items-start gap-6 lg:grid-cols-[12rem_minmax(0,1fr)] lg:gap-12">
-        <aside className="min-w-0 lg:sticky lg:top-8">
-          <nav aria-label="割り勘の手順" className="rounded-panel border border-main/10 p-2">
+        <aside className="contents lg:sticky lg:top-8 lg:block lg:min-w-0">
+          <nav
+            aria-label="割り勘の手順"
+            className="fixed right-4 bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-4 z-40 mx-auto max-w-sm rounded-panel border border-main/15 bg-sub/95 p-2 shadow-xl shadow-main/10 backdrop-blur-lg lg:static lg:max-w-none lg:bg-sub lg:shadow-none"
+          >
             <ol className="grid grid-cols-3 gap-2">
               {steps.map((step) => {
                 const active = path === step.href;
@@ -193,7 +196,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </dl>
           </div>
         </aside>
-        <main id="main" className="min-w-0 space-y-5 pb-8 sm:space-y-6">
+        <main id="main" className="min-w-0 space-y-5 pb-32 sm:space-y-6 lg:pb-8">
           {storageError && (
             <Notice alert>
               <p>{storageError}</p>
