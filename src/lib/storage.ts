@@ -1,5 +1,5 @@
 import { parsePayPayLinks } from './paypay';
-import { emptyState, type WarikanState, type Result, type Payment } from './types';
+import { initialState, type WarikanState, type Result, type Payment } from './types';
 import { MAX_MEMBERS, MAX_PAYMENTS, validateMemberName, validatePayment } from './validation';
 
 // Keep the existing keys so that existing browser data can be migrated.
@@ -157,7 +157,7 @@ export function loadFromStorage(storage?: StoragePort): LoadResult {
         ok: false,
         error: '保存データを読み取れません。元のデータを保護するため、自動保存を停止しました。',
       };
-    return { ok: true, data: { state: emptyState(), raw: null, recovered: false } };
+    return { ok: true, data: { state: initialState(), raw: null, recovered: false } };
   } catch {
     return {
       ok: false,
