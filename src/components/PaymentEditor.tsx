@@ -1,5 +1,5 @@
 'use client';
-import { useRef, useState, type FormEvent } from 'react';
+import { useLayoutEffect, useRef, useState, type FormEvent } from 'react';
 import {
   Check,
   Plus,
@@ -51,6 +51,12 @@ export function PaymentEditor({
     (id) => !members.some((member) => member.id === id),
   );
   const amountRef = useRef<HTMLInputElement>(null);
+  useLayoutEffect(() => {
+    if (!editingId) return;
+    // Focus with the updated form before paint, never after the user starts typing elsewhere.
+    amountRef.current?.focus({ preventScroll: true });
+    amountRef.current?.select();
+  }, [editingId]);
   const [error, setError] = useState('');
   const valid = validateAmount(Number(amount));
   const shares =

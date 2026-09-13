@@ -41,11 +41,6 @@ export default function PaymentsPage() {
           onEdit={(payment) => {
             workspace.startEditing(payment);
             scrollToContent(document.getElementById('payment-editor'), 'smooth');
-            requestAnimationFrame(() => {
-              const input = document.getElementById('amount') as HTMLInputElement | null;
-              input?.focus({ preventScroll: true });
-              input?.select();
-            });
           }}
           onRemove={(id) => {
             if (workspace.editingId === id) workspace.cancelEditing();
