@@ -10,6 +10,25 @@ async function setup(page: Page) {
   await page.getByRole('link', { name: '支払いを記録する', exact: true }).click();
   await expect(page).toHaveURL(/\/payments$/);
 }
+async function menu(page: Page, action: string) {
+  await page.getByRole('button', { name: 'メニュー', exact: true }).click();
+  await page.getByRole('menuitem', { name: action, exact: true }).click();
+}
+async function denyLocalWrites(page: Page) {
+  await page.evaluate(() => {
+    const original = Storage.prototype.setItem;
+    Object.defineProperty(window, '__restoreWrites', {
+      configurable: true,
+      value: () => {
+        Storage.prototype.setItem = original;
+      },
+    });
+    Storage.prototype.setItem = function (key, value) {
+      if (this === window.localStorage) throw new DOMException('Quota', 'QuotaExceededError');
+      original.call(this, key, value);
+    };
+  });
+}
 async function noOverflow(page: Page) {
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
     true,
@@ -60,12 +79,19 @@ test('complete flow: selected participants, immediate reload, edit, copy fallbac
   await page.getByRole('link', { name: '精算結果を見る' }).click();
   await expect(page.getByTestId('transfer-list').locator('li')).toContainText('¥500');
 
+  await denyLocalWrites(page);
+  await menu(page, 'リフレッシュ');
+  await expect(page.locator('main [role=alert]')).toContainText('保存できません');
   const downloading = page.waitForEvent('download');
   await page.getByRole('button', { name: 'バックアップ', exact: true }).click();
   const file = await downloading;
   const backupPath = await file.path();
   expect(backupPath).toBeTruthy();
-  await page.getByRole('button', { name: '新しく始める' }).click();
+  await page.evaluate(() =>
+    (window as unknown as { __restoreWrites: () => void }).__restoreWrites(),
+  );
+  await page.getByRole('button', { name: '保存を再試行' }).click();
+  await menu(page, '新しく始める');
   await page
     .getByRole('alertdialog')
     .getByRole('button', { name: '新しく始める', exact: true })
@@ -261,6 +287,7 @@ test('denied storage access at startup can recover without overwriting data', as
 
 test('a user-confirmed backup can recover an otherwise unreadable event', async ({ page }) => {
   await setup(page);
+  await page.getByLabel('金額', { exact: true }).fill('999');
   const backup = await page.evaluate((storageKey) => localStorage.getItem(storageKey)!, key);
   await page.evaluate((storageKey) => {
     localStorage.setItem(storageKey, '{broken');
@@ -282,6 +309,8 @@ test('a user-confirmed backup can recover an otherwise unreadable event', async 
   await expect(page.getByTestId('member-list').locator('li')).toHaveCount(3);
   await page.reload();
   await expect(page.getByLabel('イベント名', { exact: true })).toHaveValue('週末の京都旅行');
+  await page.getByRole('link', { name: '支払い', exact: true }).click();
+  await expect(page.getByLabel('金額', { exact: true })).toHaveValue('');
 });
 
 test('all routes inherit the shared theme and keep a single persistent shell', async ({ page }) => {
@@ -345,6 +374,8 @@ test('payment drafts survive route changes and continuous entry keeps payer and 
   await page.getByRole('checkbox', { name: 'りく', exact: true }).uncheck();
   await page.getByRole('link', { name: 'メンバー', exact: true }).click();
   await page.getByRole('link', { name: '支払い', exact: true }).click();
+  await expect(page).toHaveURL(/\/payments$/);
+  await page.reload();
   await expect(page.getByLabel('金額', { exact: true })).toHaveValue('12800');
   await expect(page.getByLabel('何の支払い？')).toHaveValue('宿泊');
   await expect(page.getByRole('checkbox', { name: 'りく', exact: true })).not.toBeChecked();
@@ -362,6 +393,7 @@ test('payment drafts survive route changes and continuous entry keeps payer and 
   await page.getByLabel('金額', { exact: true }).fill('12000');
   await page.getByRole('link', { name: '精算結果', exact: true }).click();
   await page.getByRole('link', { name: '支払い', exact: true }).click();
+  await menu(page, 'リフレッシュ');
   await expect(page.getByLabel('金額', { exact: true })).toHaveValue('12000');
   await page.getByRole('button', { name: '編集をキャンセル', exact: true }).click();
   await expect(page.getByLabel('金額', { exact: true })).toHaveValue('500');
@@ -413,7 +445,7 @@ test('replacing an event clears drafts and individual transfers can be copied wi
   );
   await page.getByRole('link', { name: '支払い', exact: true }).click();
   await page.getByLabel('金額', { exact: true }).fill('800');
-  await page.getByRole('button', { name: '新しく始める', exact: true }).click();
+  await menu(page, '新しく始める');
   await page
     .getByRole('alertdialog')
     .getByRole('button', { name: '新しく始める', exact: true })
@@ -424,8 +456,11 @@ test('replacing an event clears drafts and individual transfers can be copied wi
     await page.getByRole('button', { name: '追加', exact: true }).click();
   }
   await page.getByRole('link', { name: '支払い', exact: true }).click();
+  await expect(page).toHaveURL(/\/payments$/);
+  await page.reload();
   await expect(page.getByLabel('金額', { exact: true })).toHaveValue('');
-  await page.locator('footer').scrollIntoViewIfNeeded();
+  await expect(page.locator('footer')).toHaveCount(0);
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
   await expect(page.getByRole('navigation', { name: '割り勘の手順' })).toBeInViewport();
   await noOverflow(page);
 });
@@ -455,10 +490,11 @@ test('shadcn controls support keyboard selection, help, tooltips and safe confir
   ).toBeVisible();
   await help.click();
   await expect(help).toHaveAttribute('aria-expanded', 'false');
-  const reset = page.getByRole('button', { name: '新しく始める', exact: true });
+  const reset = page.getByRole('button', { name: 'メニュー', exact: true });
   await reset.focus();
-  await expect(page.getByRole('tooltip', { name: '新しく始める', exact: true })).toBeVisible();
   await reset.press('Enter');
+  await page.getByRole('menuitem', { name: '新しく始める', exact: true }).press('End');
+  await page.keyboard.press('Enter');
   const dialog = page.getByRole('alertdialog', { name: '新しいイベント' });
   await expect(dialog.getByRole('button', { name: 'キャンセル' })).toBeFocused();
   for (let i = 0; i < 4; i++) {
@@ -470,4 +506,71 @@ test('shadcn controls support keyboard selection, help, tooltips and safe confir
   await expect(reset).toBeFocused();
   await expect(page.getByLabel('金額', { exact: true })).toBeVisible();
   await noOverflow(page);
+});
+
+test('refresh keeps data and failed draft saves retain inputs until retry', async ({ page }) => {
+  await setup(page);
+  await expect(page.locator('footer')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'バックアップ', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: '読み込む', exact: true })).toHaveCount(0);
+  await page.evaluate(() => {
+    const original = Storage.prototype.setItem;
+    Object.defineProperty(window, '__restoreDraft', {
+      value: () => {
+        Storage.prototype.setItem = original;
+      },
+    });
+    Storage.prototype.setItem = function (key, value) {
+      if (this === window.sessionStorage) throw new DOMException('Quota', 'QuotaExceededError');
+      original.call(this, key, value);
+    };
+    document.documentElement.dataset.beforeRefresh = 'yes';
+  });
+  await page.getByLabel('金額', { exact: true }).fill('1.5');
+  await page.getByLabel('何の支払い？').fill('まだ入力途中');
+  await expect(page.locator('main [role=alert]')).toContainText('下書きを保存できません');
+  await menu(page, 'リフレッシュ');
+  await expect(page.locator('html')).toHaveAttribute('data-before-refresh', 'yes');
+  await expect(page.getByLabel('金額', { exact: true })).toHaveValue('1.5');
+  await page.getByRole('link', { name: 'メンバー', exact: true }).click();
+  await page.getByRole('link', { name: '支払い', exact: true }).click();
+  await expect(page.getByLabel('何の支払い？')).toHaveValue('まだ入力途中');
+  await page.evaluate(() => (window as unknown as { __restoreDraft: () => void }).__restoreDraft());
+  await menu(page, 'リフレッシュ');
+  await expect(page.locator('html')).not.toHaveAttribute('data-before-refresh', 'yes');
+  await expect(page.getByLabel('金額', { exact: true })).toHaveValue('1.5');
+  await expect(page.getByLabel('何の支払い？')).toHaveValue('まだ入力途中');
+  await expect(page.locator('main [role=alert]')).toHaveCount(0);
+});
+
+test('unreadable draft storage can be retried without overwriting the saved draft', async ({
+  page,
+}) => {
+  await setup(page);
+  await page.getByLabel('金額', { exact: true }).fill('750');
+  await page.addInitScript(() => {
+    const original = Object.getOwnPropertyDescriptor(window, 'sessionStorage')!;
+    Object.defineProperty(window, '__restoreDraftRead', {
+      value: () => Object.defineProperty(window, 'sessionStorage', original),
+    });
+    Object.defineProperty(window, 'sessionStorage', {
+      configurable: true,
+      get() {
+        throw new DOMException('Denied', 'SecurityError');
+      },
+    });
+  });
+  await page.reload();
+  await expect(page.getByRole('heading', { name: '下書きを確認してください' })).toBeVisible();
+  await expect(page.getByLabel('金額', { exact: true })).toHaveCount(0);
+  await page.getByRole('link', { name: 'メンバー', exact: true }).click();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByLabel('イベント名', { exact: true })).toHaveCount(0);
+  await page.evaluate(() =>
+    (window as unknown as { __restoreDraftRead: () => void }).__restoreDraftRead(),
+  );
+  await page.getByRole('button', { name: '保存を再試行' }).click();
+  await page.getByRole('link', { name: '支払い', exact: true }).click();
+  await expect(page.getByLabel('金額', { exact: true })).toHaveValue('750');
+  await expect(page.locator('main [role=alert]')).toHaveCount(0);
 });
