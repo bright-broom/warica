@@ -1,3 +1,4 @@
+import { goToStep } from './page-arrows';
 import { savedEmptyEvent } from './saved-empty-event';
 import { expect, test } from '@playwright/test';
 
@@ -22,8 +23,8 @@ test('legacy appearance preferences cannot restore the removed theme; the header
   const ledger = await page.evaluate(
     () => JSON.parse(localStorage.getItem('warican-app-data-v2')!).data,
   );
-  for (const name of ['メンバー', '支払い', '精算結果']) {
-    await page.getByRole('link', { name, exact: true }).click();
+  for (const path of ['/', '/payments', '/result'] as const) {
+    await goToStep(page, path);
     await expect(page.locator('header').getByRole('button')).toHaveCount(1);
     await expect(page.locator('header').getByRole('status')).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'メニュー', exact: true })).toHaveCount(0);
@@ -36,7 +37,7 @@ test('legacy appearance preferences cannot restore the removed theme; the header
     ).toEqual(ledger);
   }
   await expect(page.getByTestId('transfer-list')).toContainText('¥1,000');
-  await page.getByRole('link', { name: '支払い', exact: true }).click();
+  await goToStep(page, '/payments');
   await expect(page.getByLabel('金額', { exact: true })).toHaveValue('777');
   await expect(page.getByLabel('何の支払い？')).toHaveValue('入力途中');
 });

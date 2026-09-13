@@ -1,3 +1,4 @@
+import { goToStep } from './page-arrows';
 import { savedEmptyEvent } from './saved-empty-event';
 import { expect, test, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
@@ -38,9 +39,9 @@ for (const restored of [false, true]) {
       await page.getByLabel('金額', { exact: true }).fill('3001');
       await page.getByLabel('何の支払い？').fill('入力途中');
     }
-    await page.getByRole('link', { name: 'メンバー', exact: true }).click();
+    await goToStep(page, '/');
     await page.getByRole('button', { name: 'あおいを削除', exact: true }).click();
-    await page.getByRole('link', { name: '支払い', exact: true }).click();
+    await goToStep(page, '/payments');
     const submit = page.getByRole('button', { name: 'この支払いを追加する', exact: true });
     await expect(page.getByLabel('支払った人', { exact: true })).toHaveValue('');
     await expect(submit).toBeDisabled();
@@ -77,10 +78,10 @@ test('adding a member cannot change an in-progress split or the remembered next-
 }) => {
   await setup(page);
   await page.getByLabel('金額', { exact: true }).fill('3000');
-  await page.getByRole('link', { name: 'メンバー', exact: true }).click();
+  await goToStep(page, '/');
   await page.getByLabel('メンバーの名前', { exact: true }).fill('そら');
   await page.getByRole('button', { name: '追加', exact: true }).click();
-  await page.getByRole('link', { name: '支払い', exact: true }).click();
+  await goToStep(page, '/payments');
   await expect(page.getByRole('checkbox', { name: 'そら', exact: true })).not.toBeChecked();
   await page.reload();
   await expect(page.getByRole('checkbox', { name: 'そら', exact: true })).not.toBeChecked();
@@ -108,9 +109,9 @@ test('editing a saved payment cannot hide an invalid member selection in the sep
   await page.getByLabel('金額', { exact: true }).fill('777');
   await page.getByLabel('何の支払い？').fill('次の支払い');
   await page.getByRole('button', { name: '登録済みを編集', exact: true }).click();
-  await page.getByRole('link', { name: 'メンバー', exact: true }).click();
+  await goToStep(page, '/');
   await page.getByRole('button', { name: 'あおいを削除', exact: true }).click();
-  await page.getByRole('link', { name: '支払い', exact: true }).click();
+  await goToStep(page, '/payments');
   await expect(page.getByLabel('何の支払い？')).toHaveValue('登録済み');
   await page.reload();
   await expect(page.getByLabel('何の支払い？')).toHaveValue('登録済み');

@@ -1,3 +1,4 @@
+import { goToStep } from './page-arrows';
 import { savedEmptyEvent } from './saved-empty-event';
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
@@ -109,11 +110,11 @@ test('changed amounts invalidate links permanently and importing a backup replac
   const backup = await page.evaluate((key) => localStorage.getItem(key)!, storageKey);
   await register(page);
   for (const amount of ['4000', '3000']) {
-    await page.getByRole('link', { name: '支払い', exact: true }).click();
+    await goToStep(page, '/payments');
     await page.getByRole('button', { name: 'ホテルを編集' }).click();
     await page.getByLabel('金額', { exact: true }).fill(amount);
     await page.getByRole('button', { name: '変更を保存する' }).click();
-    await page.getByRole('link', { name: '精算結果', exact: true }).click();
+    await goToStep(page, '/result');
     await expect(page).toHaveURL(/\/result$/);
     await page.reload();
     await expect(
