@@ -68,12 +68,10 @@
   a,
   input,
   select,
-  textarea,
-  summary {
+  textarea {
     -webkit-tap-highlight-color: transparent;
   }
-  button:not(:disabled),
-  summary {
+  button:not(:disabled) {
     cursor: pointer;
   }
   :focus-visible {
