@@ -1,0 +1,12 @@
+packages:
+  - .
+
+overrides:
+  # Next 15 pins an older PostCSS. Keep the patched compatible 8.x release.
+  postcss: 8.5.28
+
+onlyBuiltDependencies:
+  - '@tailwindcss/oxide'
+  - esbuild
+  - sharp
+  - unrs-resolver
