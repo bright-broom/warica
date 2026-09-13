@@ -9,6 +9,7 @@ import { PaymentHistory } from '@/components/PaymentHistory';
 import { routes } from '@/config/navigation';
 import { useWarikanStore } from '../useWarikanStore';
 import { yen } from '@/lib/calculations';
+import { scrollToContent } from '@/lib/scroll';
 
 export default function PaymentsPage() {
   const { state, total } = useWarikanStore();
@@ -39,9 +40,7 @@ export default function PaymentsPage() {
         <PaymentHistory
           onEdit={(payment) => {
             workspace.startEditing(payment);
-            document
-              .getElementById('payment-editor')
-              ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            scrollToContent(document.getElementById('payment-editor'), 'smooth');
             requestAnimationFrame(() => {
               const input = document.getElementById('amount') as HTMLInputElement | null;
               input?.focus({ preventScroll: true });
