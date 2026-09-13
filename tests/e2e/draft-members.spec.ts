@@ -1,7 +1,10 @@
+import { savedEmptyEvent } from './saved-empty-event';
 import { expect, test, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { DRAFT_KEY, emptyWorkspace, serializeDraft } from '../../src/lib/payment-draft';
 import { STORAGE_KEY } from '../../src/lib/storage';
+
+test.use({ storageState: savedEmptyEvent });
 
 async function setup(page: Page) {
   await page.goto('/');

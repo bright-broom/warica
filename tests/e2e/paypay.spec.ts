@@ -1,5 +1,8 @@
+import { savedEmptyEvent } from './saved-empty-event';
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
+
+test.use({ storageState: savedEmptyEvent });
 
 // Deliberately fake link. Every PayPay navigation in these tests is intercepted.
 const requestURL = 'https://qr.paypay.ne.jp/warica-test-request?token=fixture-only';

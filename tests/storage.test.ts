@@ -61,12 +61,32 @@ test('JSON roundtrip preserves a complete event and saves synchronously', () => 
   assert.equal(loaded.data.recovered, false);
 });
 
-test('reading an empty store does not write anything', () => {
+test('first use supplies stable dinner defaults without writing to storage', () => {
   const storage = memory();
   const loaded = loadFromStorage(storage);
   assert.ok(loaded.ok);
+  assert.equal(loaded.data.state.eventName, 'みんなでごはん');
+  assert.deepEqual(
+    loaded.data.state.members.map((member) => member.name),
+    ['A', 'B'],
+  );
+  assert.deepEqual(loadFromStorage(storage), loaded);
   assert.equal(loaded.data.state.payments.length, 0);
   assert.equal(storage.values.size, 0);
+});
+
+test('an intentionally empty saved event and recovered backup never get default members', () => {
+  const state = emptyState();
+  const raw = serializeState(state);
+  for (const key of [STORAGE_KEY, BACKUP_KEY]) {
+    const storage = memory();
+    storage.setItem(key, raw);
+    const loaded = loadFromStorage(storage);
+    assert.ok(loaded.ok);
+    assert.deepEqual(loaded.data.state, state);
+    assert.equal(storage.getItem(key), raw);
+    assert.equal(storage.values.size, 1);
+  }
 });
 
 test('malformed JSON and valid JSON with a broken checksum restore the last valid backup', () => {

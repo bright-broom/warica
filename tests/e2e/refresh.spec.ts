@@ -1,4 +1,7 @@
+import { savedEmptyEvent } from './saved-empty-event';
 import { expect, test } from '@playwright/test';
+
+test.use({ storageState: savedEmptyEvent });
 
 test('legacy appearance preferences cannot restore the removed theme; the header refresh action preserves data on every page', async ({
   page,

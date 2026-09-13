@@ -55,3 +55,14 @@ export const emptyState = (): WarikanState => ({
   payments: [],
   lastUpdated: new Date().toISOString(),
 });
+
+/** Stable identity until the first edit lets an initial payment draft survive reloads. */
+export const initialState = (): WarikanState => ({
+  eventName: 'みんなでごはん',
+  members: [
+    { id: 'initial-a', name: 'A' },
+    { id: 'initial-b', name: 'B' },
+  ],
+  payments: [],
+  lastUpdated: '1970-01-01T00:00:00.000Z',
+});

@@ -1,3 +1,4 @@
+import { savedEmptyEvent } from './saved-empty-event';
 import { expect, test, type Page } from '@playwright/test';
 import { serializeState } from '../../src/lib/storage';
 import { emptyState } from '../../src/lib/types';
@@ -42,6 +43,8 @@ async function noOverflow(page: Page) {
     true,
   );
 }
+
+test.use({ storageState: savedEmptyEvent });
 
 test('complete flow: selected participants, immediate reload, edit, copy fallback and backup', async ({
   page,
@@ -288,7 +291,9 @@ test('denied storage access at startup can recover without overwriting data', as
   );
   await page.getByRole('button', { name: '保存を再試行' }).click();
   await expect(page.getByLabel('イベント名', { exact: true })).toBeVisible();
-  expect(await page.evaluate((storageKey) => localStorage.getItem(storageKey), key)).toBeNull();
+  expect(await page.evaluate((storageKey) => localStorage.getItem(storageKey), key)).toBe(
+    savedEmptyEvent.origins[0].localStorage[0].value,
+  );
 });
 
 test('a user-confirmed backup can recover an otherwise unreadable event', async ({ page }) => {

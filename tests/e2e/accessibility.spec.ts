@@ -1,5 +1,8 @@
+import { savedEmptyEvent } from './saved-empty-event';
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
+
+test.use({ storageState: savedEmptyEvent });
 
 test('all pages and confirmation expose accessible names and readable text', async ({
   page,
