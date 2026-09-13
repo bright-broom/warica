@@ -14,6 +14,11 @@ import {
   TrainFront,
   Coffee,
 } from 'lucide-react';
+import { Checkbox } from './ui/checkbox';
+import { Label } from './ui/label';
+import { FieldSet, FieldLegend } from './ui/field';
+import { NativeSelectOption } from './ui/native-select';
+import { IconChoices } from './IconChoices';
 import { IconAction } from './IconAction';
 import { Field, Help, Notice, Panel, SectionHeader, SelectInput, TextInput } from './ui';
 import { usePaymentWorkspace } from './PaymentWorkspace';
@@ -114,14 +119,14 @@ export function PaymentEditor({
           {amountError || '1〜1,000,000円・整数で入力'}
         </p>
         <div className="relative">
-          <label
+          <Label
             htmlFor="payer"
             title="支払った人"
             className="pointer-events-none absolute top-1/2 left-4 z-10 -translate-y-1/2 text-main/60"
           >
             <UserRound size={18} aria-hidden="true" />
             <span className="sr-only">支払った人</span>
-          </label>
+          </Label>
           <SelectInput
             id="payer"
             className="pl-11"
@@ -129,9 +134,9 @@ export function PaymentEditor({
             onChange={(e) => updateDraft({ payerId: e.target.value })}
           >
             {members.map((member) => (
-              <option key={member.id} value={member.id}>
+              <NativeSelectOption key={member.id} value={member.id}>
                 {member.name}
-              </option>
+              </NativeSelectOption>
             ))}
           </SelectInput>
         </div>
@@ -144,24 +149,19 @@ export function PaymentEditor({
             placeholder="内容（任意）"
           />
         </Field>
-        <div className="flex gap-1" role="group" aria-label="支払い内容の候補">
-          {[
+        <IconChoices
+          label="支払い内容の候補"
+          value={memo}
+          onValueChange={(memo) => updateDraft({ memo })}
+          choices={[
             { label: '食事', icon: Utensils },
             { label: '宿泊', icon: BedDouble },
             { label: '交通', icon: TrainFront },
             { label: 'カフェ', icon: Coffee },
-          ].map(({ label, icon }) => (
-            <IconAction
-              key={label}
-              label={label}
-              icon={icon}
-              aria-pressed={memo === label}
-              onClick={() => updateDraft({ memo: label })}
-            />
-          ))}
-        </div>
-        <fieldset className="min-w-0 border-t border-main/10 pt-2">
-          <legend className="sr-only">割り勘に含める人</legend>
+          ]}
+        />
+        <FieldSet className="block min-w-0 gap-0 border-t border-main/10 pt-2">
+          <FieldLegend className="sr-only">割り勘に含める人</FieldLegend>
           <div className="mb-2 flex items-center justify-between">
             <span
               className="flex items-center gap-2 text-xs text-main/65 tabular-nums"
@@ -183,30 +183,26 @@ export function PaymentEditor({
           </div>
           <div className="flex flex-wrap gap-1.5">
             {members.map((member) => (
-              <label
+              <Label
                 key={member.id}
-                className="relative flex min-h-control max-w-full cursor-pointer items-center gap-2 rounded-control border border-main/15 px-2 py-2 text-sm transition-colors has-checked:border-main/30 has-checked:bg-accent/30 has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-main"
+                htmlFor={`participant-${member.id}`}
+                className="relative flex min-h-control max-w-full cursor-pointer items-center gap-2 rounded-control border border-main/15 px-2 py-2 text-sm transition-colors has-data-[state=checked]:border-main/30 has-data-[state=checked]:bg-accent/30 has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-main"
               >
-                <input
-                  className="peer absolute inset-0 size-full cursor-pointer opacity-0"
-                  type="checkbox"
+                <Checkbox
+                  id={`participant-${member.id}`}
+                  className="border-main/30 data-[state=checked]:border-main data-[state=checked]:bg-main data-[state=checked]:text-accent"
                   checked={participants.includes(member.id)}
-                  onChange={(e) =>
+                  onCheckedChange={(checked) =>
                     updateDraft({
-                      participantIds: e.target.checked
-                        ? [...participants, member.id]
-                        : participants.filter((id) => id !== member.id),
+                      participantIds:
+                        checked === true
+                          ? [...participants, member.id]
+                          : participants.filter((id) => id !== member.id),
                     })
                   }
                 />
-                <span
-                  className="flex size-4 shrink-0 items-center justify-center rounded border border-main/30 text-transparent peer-checked:border-main peer-checked:bg-main peer-checked:text-accent"
-                  aria-hidden="true"
-                >
-                  <Check size={12} strokeWidth={3} />
-                </span>
                 <span className="min-w-0 wrap-anywhere">{member.name}</span>
-              </label>
+              </Label>
             ))}
           </div>
           {!selected.length && (
@@ -214,7 +210,7 @@ export function PaymentEditor({
               対象者を選択
             </p>
           )}
-        </fieldset>
+        </FieldSet>
         {error && <Notice alert>{error}</Notice>}
         <div className="flex items-center justify-between gap-3 border-t border-main/10 pt-4">
           <div className="min-w-0" aria-live="polite">

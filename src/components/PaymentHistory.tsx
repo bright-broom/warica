@@ -2,6 +2,7 @@
 import { Pencil, ReceiptText, Trash2, Users, Wallet, History, TriangleAlert } from 'lucide-react';
 import { useWarikanStore } from '@/app/useWarikanStore';
 import { Avatar, Badge, EmptyState, Panel, SectionHeader } from './ui';
+import { useConfirmation } from './ApplicationUI';
 import { IconAction } from './IconAction';
 import type { Payment } from '@/lib/types';
 import { yen } from '@/lib/calculations';
@@ -13,6 +14,7 @@ export function PaymentHistory({
   onEdit?: (payment: Payment) => void;
   onRemove?: (id: string) => void;
 }) {
+  const confirm = useConfirmation();
   const {
     state: { payments, members },
     removePayment,
@@ -71,11 +73,14 @@ export function PaymentHistory({
                       <IconAction
                         label={`${payment.memo || '立て替え'}を削除`}
                         icon={Trash2}
-                        onClick={() => {
+                        onClick={async () => {
                           if (
-                            window.confirm(
-                              `「${payment.memo || '立て替え'}」${yen(payment.amount)}を削除しますか？`,
-                            )
+                            await confirm({
+                              title: '支払いを削除',
+                              description: `「${payment.memo || '立て替え'}」${yen(payment.amount)}を削除しますか？`,
+                              action: '削除する',
+                              icon: Trash2,
+                            })
                           ) {
                             const removed = removePayment(payment.id);
                             if (removed.ok) onRemove?.(payment.id);

@@ -11,9 +11,12 @@ import {
   Split,
   Users,
   Wallet,
-  LoaderCircle,
   ArrowRight,
 } from 'lucide-react';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { Spinner } from './ui/spinner';
+import { useConfirmation } from './ApplicationUI';
 import { IconAction, IconLink } from './IconAction';
 import { Avatar, EmptyState, Notice, cx } from './ui';
 import { navigation, routes } from '@/config/navigation';
@@ -25,6 +28,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const path = usePathname(),
     router = useRouter();
   const store = useWarikanStore();
+  const confirm = useConfirmation();
   const { state, isLoaded, loadBlocked, storageError, notice, total } = store;
   const inputRef = useRef<HTMLInputElement>(null);
   const [message, setMessage] = useState('');
@@ -61,9 +65,12 @@ export function AppShell({ children }: { children: ReactNode }) {
         return;
       }
       if (
-        !window.confirm(
-          `「${validated.data.eventName || '名称未設定'}」を読み込みます。現在のイベントを置き換えてよいですか？必要なデータは先にバックアップを保存してください。`,
-        )
+        !(await confirm({
+          title: 'バックアップを読み込む',
+          description: `「${validated.data.eventName || '名称未設定'}」で現在のイベントを置き換えます。必要なデータは先にバックアップしてください。`,
+          action: '読み込む',
+          icon: ArrowUpFromLine,
+        }))
       )
         return;
       const result = store.importBackup(raw);
@@ -76,11 +83,14 @@ export function AppShell({ children }: { children: ReactNode }) {
     }
   }
 
-  function reset() {
+  async function reset() {
     if (
-      !window.confirm(
-        '新しいイベントを始めますか？現在の入力をクリアします。必要な場合は先にバックアップを保存してください。',
-      )
+      !(await confirm({
+        title: '新しいイベント',
+        description: '現在の入力をクリアします。必要なデータは先にバックアップしてください。',
+        action: '新しく始める',
+        icon: RotateCcw,
+      }))
     )
       return;
     const result = store.resetAll();
@@ -117,7 +127,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           title={saveLabel}
         >
           {!isLoaded ? (
-            <LoaderCircle size={20} className="motion-safe:animate-spin" aria-hidden="true" />
+            <Spinner className="size-5 motion-reduce:animate-none" aria-hidden="true" />
           ) : storageError ? (
             <RotateCcw size={20} aria-hidden="true" />
           ) : (
@@ -142,24 +152,27 @@ export function AppShell({ children }: { children: ReactNode }) {
                 return (
                   <li key={step.href}>
                     {step.ready && isLoaded && !loadBlocked ? (
-                      <Link
-                        href={step.href}
-                        className={style}
-                        aria-label={step.label}
-                        title={step.label}
-                        aria-current={active ? 'step' : undefined}
-                      >
-                        <step.icon size={22} aria-hidden="true" />
-                      </Link>
+                      <Button asChild variant={active ? 'default' : 'ghost'} className={style}>
+                        <Link
+                          href={step.href}
+                          className={style}
+                          aria-label={step.label}
+                          title={step.label}
+                          aria-current={active ? 'step' : undefined}
+                        >
+                          <step.icon className="size-[22px]" aria-hidden="true" />
+                        </Link>
+                      </Button>
                     ) : (
-                      <button
+                      <Button
+                        variant={active ? 'default' : 'ghost'}
                         className={cx(style, 'disabled:cursor-not-allowed disabled:opacity-30')}
                         aria-label={step.label}
                         title={step.label}
                         disabled
                       >
-                        <step.icon size={22} aria-hidden="true" />
-                      </button>
+                        <step.icon className="size-[22px]" aria-hidden="true" />
+                      </Button>
                     )}
                   </li>
                 );
@@ -196,7 +209,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </dl>
           </div>
         </aside>
-        <main id="main" className="min-w-0 space-y-5 pb-32 sm:space-y-6 lg:pb-8">
+        <main id="main" tabIndex={-1} className="min-w-0 space-y-5 pb-32 sm:space-y-6 lg:pb-8">
           {storageError && (
             <Notice alert>
               <p>{storageError}</p>
@@ -211,7 +224,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           {notice && <Notice>{notice}</Notice>}
           {!isLoaded ? (
             <div className="flex justify-center py-20" role="status">
-              <LoaderCircle size={24} className="motion-safe:animate-spin" aria-hidden="true" />
+              <Spinner className="size-6 motion-reduce:animate-none" aria-hidden="true" />
               <span className="sr-only">読み込み中</span>
             </div>
           ) : loadBlocked ? (
@@ -253,12 +266,12 @@ export function AppShell({ children }: { children: ReactNode }) {
                 disabled={!isLoaded || loadBlocked}
               />
             </div>
-            <input
+            <Input
               ref={inputRef}
               type="file"
               accept=".json,application/json"
               aria-label="バックアップファイル"
-              className="sr-only"
+              className="hidden"
               onChange={(e) => void importFile(e.target.files?.[0])}
             />
             <p

@@ -65,13 +65,19 @@ test('complete flow: selected participants, immediate reload, edit, copy fallbac
   const file = await downloading;
   const backupPath = await file.path();
   expect(backupPath).toBeTruthy();
-  page.once('dialog', (dialog) => dialog.accept());
   await page.getByRole('button', { name: '新しく始める' }).click();
+  await page
+    .getByRole('alertdialog')
+    .getByRole('button', { name: '新しく始める', exact: true })
+    .click();
   await expect(page.getByLabel('イベント名', { exact: true })).toHaveValue('');
   await page.reload();
   await expect(page.getByLabel('イベント名', { exact: true })).toHaveValue('');
-  page.once('dialog', (dialog) => dialog.accept());
   await page.getByLabel('バックアップファイル').setInputFiles(backupPath!);
+  await page
+    .getByRole('alertdialog')
+    .getByRole('button', { name: '読み込む', exact: true })
+    .click();
   await expect(page.getByLabel('イベント名', { exact: true })).toHaveValue('週末の京都旅行');
   await noOverflow(page);
   expect(errors).toEqual([]);
@@ -194,8 +200,8 @@ test('clipboard success, deletion cancellation and stale-tab protection', async 
   await page.getByLabel('金額', { exact: true }).fill('3000');
   await page.getByLabel('何の支払い？').fill('ホテル');
   await page.getByRole('button', { name: 'この支払いを追加する' }).click();
-  page.once('dialog', (dialog) => dialog.dismiss());
   await page.getByRole('button', { name: 'ホテルを削除' }).click();
+  await page.getByRole('alertdialog').getByRole('button', { name: 'キャンセル' }).click();
   await expect(page.getByTestId('payment-list').locator('li')).toHaveCount(1);
   await page.getByRole('link', { name: '精算結果を見る' }).click();
   await page.getByRole('button', { name: '精算結果をコピー' }).click();
@@ -259,12 +265,15 @@ test('a user-confirmed backup can recover an otherwise unreadable event', async 
   await page.reload();
   await expect(page.getByRole('heading', { name: '保存データを確認してください' })).toBeVisible();
   await expect(page.getByRole('button', { name: '読み込む', exact: true })).toBeEnabled();
-  page.once('dialog', (dialog) => dialog.accept());
   await page.getByLabel('バックアップファイル').setInputFiles({
     name: 'backup.json',
     mimeType: 'application/json',
     buffer: Buffer.from(backup),
   });
+  await page
+    .getByRole('alertdialog')
+    .getByRole('button', { name: '読み込む', exact: true })
+    .click();
   await expect(page.getByLabel('イベント名', { exact: true })).toHaveValue('週末の京都旅行');
   await expect(page.getByTestId('member-list').locator('li')).toHaveCount(3);
   await page.reload();
@@ -327,7 +336,7 @@ test('payment drafts survive route changes and continuous entry keeps payer and 
   await expect(page.getByLabel('金額', { exact: true })).toHaveValue('12800');
   await page.getByLabel('金額', { exact: true }).press('Enter');
   await expect(page.getByLabel('何の支払い？')).toBeFocused();
-  await page.getByRole('button', { name: '宿泊', exact: true }).click();
+  await page.getByLabel('宿泊', { exact: true }).click();
   await page.getByRole('checkbox', { name: 'りく', exact: true }).uncheck();
   await page.getByRole('link', { name: 'メンバー', exact: true }).click();
   await page.getByRole('link', { name: '支払い', exact: true }).click();
@@ -335,7 +344,9 @@ test('payment drafts survive route changes and continuous entry keeps payer and 
   await expect(page.getByLabel('何の支払い？')).toHaveValue('宿泊');
   await expect(page.getByRole('checkbox', { name: 'りく', exact: true })).not.toBeChecked();
   await page.getByRole('button', { name: 'この支払いを追加する' }).click();
-  await expect(page.getByRole('status').filter({ hasText: '¥12,800 追加しました' })).toBeVisible();
+  await expect(
+    page.getByRole('region', { name: /通知/ }).getByText('¥12,800 追加しました'),
+  ).toBeVisible();
   await expect(page.getByLabel('金額', { exact: true })).toHaveValue('');
   await expect(page.getByLabel('金額', { exact: true })).toBeFocused();
   await expect(page.getByLabel('支払った人').locator('option:checked')).toHaveText('はる');
@@ -363,12 +374,15 @@ test('replacing an event clears drafts and individual transfers can be copied wi
   await setup(page);
   const backup = await page.evaluate((storageKey) => localStorage.getItem(storageKey)!, key);
   await page.getByLabel('金額', { exact: true }).fill('999');
-  page.once('dialog', (dialog) => dialog.accept());
   await page.getByLabel('バックアップファイル').setInputFiles({
     name: 'backup.json',
     mimeType: 'application/json',
     buffer: Buffer.from(backup),
   });
+  await page
+    .getByRole('alertdialog')
+    .getByRole('button', { name: '読み込む', exact: true })
+    .click();
   await page.getByRole('link', { name: '支払い', exact: true }).click();
   await expect(page.getByLabel('金額', { exact: true })).toHaveValue('');
   await page.getByLabel('金額', { exact: true }).fill('3000');
@@ -390,8 +404,11 @@ test('replacing an event clears drafts and individual transfers can be copied wi
   );
   await page.getByRole('link', { name: '支払い', exact: true }).click();
   await page.getByLabel('金額', { exact: true }).fill('800');
-  page.once('dialog', (dialog) => dialog.accept());
   await page.getByRole('button', { name: '新しく始める', exact: true }).click();
+  await page
+    .getByRole('alertdialog')
+    .getByRole('button', { name: '新しく始める', exact: true })
+    .click();
   await page.getByLabel('イベント名', { exact: true }).fill('新しい集まり');
   for (const name of ['A', 'B']) {
     await page.getByLabel('メンバーの名前', { exact: true }).fill(name);
@@ -401,5 +418,47 @@ test('replacing an event clears drafts and individual transfers can be copied wi
   await expect(page.getByLabel('金額', { exact: true })).toHaveValue('');
   await page.locator('footer').scrollIntoViewIfNeeded();
   await expect(page.getByRole('navigation', { name: '割り勘の手順' })).toBeInViewport();
+  await noOverflow(page);
+});
+
+test('shadcn controls support keyboard selection, help, tooltips and safe confirmation focus', async ({
+  page,
+}) => {
+  await setup(page);
+  const choice = page.getByLabel('宿泊', { exact: true });
+  const choiceBox = await choice.boundingBox();
+  expect(choiceBox?.width).toBeGreaterThanOrEqual(44);
+  expect(choiceBox?.height).toBeGreaterThanOrEqual(44);
+  await choice.click();
+  await expect(choice).toHaveAttribute('aria-checked', 'true');
+  await expect(page.getByLabel('何の支払い？')).toHaveValue('宿泊');
+  const participant = page.getByRole('checkbox', { name: 'あおい', exact: true });
+  await participant.focus();
+  await participant.press('Space');
+  await expect(participant).not.toBeChecked();
+  await participant.press('Space');
+  await expect(participant).toBeChecked();
+  const help = page.getByRole('button', { name: '計算ルール', exact: true });
+  await help.click();
+  await expect(help).toHaveAttribute('aria-expanded', 'true');
+  await expect(
+    page.getByText('端数は対象者の登録順に1円ずつ配分。金額は1〜1,000,000円の整数。'),
+  ).toBeVisible();
+  await help.click();
+  await expect(help).toHaveAttribute('aria-expanded', 'false');
+  const reset = page.getByRole('button', { name: '新しく始める', exact: true });
+  await reset.focus();
+  await expect(page.getByRole('tooltip', { name: '新しく始める', exact: true })).toBeVisible();
+  await reset.press('Enter');
+  const dialog = page.getByRole('alertdialog', { name: '新しいイベント' });
+  await expect(dialog.getByRole('button', { name: 'キャンセル' })).toBeFocused();
+  for (let i = 0; i < 4; i++) {
+    await page.keyboard.press('Tab');
+    expect(await dialog.evaluate((element) => element.contains(document.activeElement))).toBe(true);
+  }
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
+  await expect(reset).toBeFocused();
+  await expect(page.getByLabel('金額', { exact: true })).toBeVisible();
   await noOverflow(page);
 });

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { WarikanProvider } from './useWarikanStore';
 import { PaymentWorkspaceProvider } from '@/components/PaymentWorkspace';
+import { ApplicationUI } from '@/components/ApplicationUI';
 import { AppShell } from '@/components/AppShell';
 import { palette, themeVariables } from '@/design/theme';
 import './globals.css';
@@ -22,11 +23,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="ja" style={themeVariables}>
       <body>
-        <WarikanProvider>
-          <PaymentWorkspaceProvider>
-            <AppShell>{children}</AppShell>
-          </PaymentWorkspaceProvider>
-        </WarikanProvider>
+        <ApplicationUI>
+          <WarikanProvider>
+            <PaymentWorkspaceProvider>
+              <AppShell>{children}</AppShell>
+            </PaymentWorkspaceProvider>
+          </WarikanProvider>
+        </ApplicationUI>
       </body>
     </html>
   );
