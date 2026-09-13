@@ -3,7 +3,7 @@ import { createContext, useContext, useState, type ReactNode } from 'react';
 import { useWarikanStore } from '@/app/useWarikanStore';
 import type { Payment } from '@/lib/types';
 
-export type PaymentDraft = {
+type PaymentDraft = {
   payerId: string;
   amount: string;
   memo: string;

@@ -54,7 +54,7 @@ Tailwind CSS 4.3、shadcn/ui（Radix）、Lucideで3画面を管理します。�
 | 役割                             | 使用するshadcn/ui部品                     |
 | -------------------------------- | ----------------------------------------- |
 | アイコン操作と移動               | Button / Tooltip                          |
-| イベント・支払い内容の候補       | Toggle Group / Toggle / Tooltip           |
+| イベント・支払い内容の候補       | Toggle Group / Tooltip                    |
 | 金額・名前・内容・ファイル       | Input / Label / Field                     |
 | 支払者                           | Native Select / Native Select Option      |
 | 対象者                           | Checkbox / Label / FieldSet / FieldLegend |
@@ -79,3 +79,9 @@ Lucideは1.45.0。独自のSVGアイコンは持たず、faviconも `generate:ic
 部品追加は `pnpm dlx shadcn@4.21.0 add <component>` を使用します。`components.json` を設定元とし、取り込み後は3色テーマ・48pxの主要操作領域を確認してください。CLIが `cn` パッケージから取り込んだ場合は共通の `@/lib/utils` に揃えます。
 
 公式仕様: [shadcn/ui](https://ui.shadcn.com/docs/components) / [テーマ](https://ui.shadcn.com/docs/theming) / [Lucide](https://lucide.dev/guide/packages/lucide-react)
+
+## 未使用コードの管理
+
+shadcn/uiは実際に使う部品だけを保持します。新しい部品を取り込んだ後は、未使用のサブコンポーネントと公開設定を削除し、必要になった時に再導入します。Toggle Group専用のスタイル定義は同じファイルに置いています。
+
+`pnpm check:unused`（Knip）は画面・設定・スクリプト・テストからの参照を調べ、未使用ファイル・依存関係・エクスポートを検出します。`pnpm check` とCIにも含まれます。型検査では未使用のローカル変数・引数もエラーにします。`eslint-config-next` はFlatCompatの短縮名から読み込まれるため、Knip設定に理由付きの例外を置いています。

@@ -1,6 +1,6 @@
 import type { Member, PaymentInput, Result } from './types';
 
-export const MAX_AMOUNT = 1_000_000;
+const MAX_AMOUNT = 1_000_000;
 export const MAX_MEMBERS = 100;
 export const MAX_PAYMENTS = 10_000;
 

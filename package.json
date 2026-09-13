@@ -10,11 +10,12 @@
     "typecheck": "next typegen && tsc --noEmit",
     "test": "tsx --test tests/*.test.ts",
     "test:e2e": "playwright test",
-    "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm build",
+    "check": "pnpm lint && pnpm check:unused && pnpm typecheck && pnpm test && pnpm build",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "check:design": "node scripts/check-design-system.mjs",
-    "generate:icons": "node scripts/generate-brand-icon.mjs"
+    "generate:icons": "node scripts/generate-brand-icon.mjs",
+    "check:unused": "knip"
   },
   "dependencies": {
     "class-variance-authority": "^0.7.1",
@@ -37,6 +38,7 @@
     "@types/react-dom": "^19.3.0",
     "eslint": "^9.39.5",
     "eslint-config-next": "15.5.25",
+    "knip": "6.35.1",
     "prettier": "^3.9.6",
     "tailwindcss": "^4.3.3",
     "tsx": "^4.23.13",

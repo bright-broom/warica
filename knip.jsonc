@@ -1,0 +1,5 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  // FlatCompat.extends('next/...') resolves this package by ESLint's naming convention.
+  "ignoreDependencies": ["eslint-config-next"],
+}

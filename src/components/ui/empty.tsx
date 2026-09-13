@@ -14,16 +14,6 @@ function Empty({ className, ...props }: React.ComponentProps<'div'>) {
   );
 }
 
-function EmptyHeader({ className, ...props }: React.ComponentProps<'div'>) {
-  return (
-    <div
-      data-slot="empty-header"
-      className={cn('flex max-w-sm flex-col items-center gap-2 text-center', className)}
-      {...props}
-    />
-  );
-}
-
 const emptyMediaVariants = cva(
   'mb-2 flex shrink-0 items-center justify-center [&_svg]:pointer-events-none [&_svg]:shrink-0',
   {
@@ -54,29 +44,6 @@ function EmptyMedia({
   );
 }
 
-function EmptyTitle({ className, ...props }: React.ComponentProps<'div'>) {
-  return (
-    <div
-      data-slot="empty-title"
-      className={cn('text-lg font-medium tracking-tight', className)}
-      {...props}
-    />
-  );
-}
-
-function EmptyDescription({ className, ...props }: React.ComponentProps<'p'>) {
-  return (
-    <div
-      data-slot="empty-description"
-      className={cn(
-        'text-sm/relaxed text-muted-foreground [&>a]:underline [&>a]:underline-offset-4 [&>a:hover]:text-primary',
-        className,
-      )}
-      {...props}
-    />
-  );
-}
-
 function EmptyContent({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
@@ -90,4 +57,4 @@ function EmptyContent({ className, ...props }: React.ComponentProps<'div'>) {
   );
 }
 
-export { Empty, EmptyHeader, EmptyTitle, EmptyDescription, EmptyContent, EmptyMedia };
+export { Empty, EmptyContent, EmptyMedia };

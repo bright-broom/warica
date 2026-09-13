@@ -1,5 +1,5 @@
-export type MemberId = string;
-export type PaymentId = string;
+type MemberId = string;
+type PaymentId = string;
 
 export interface Member {
   readonly id: MemberId;
