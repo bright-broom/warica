@@ -1,7 +1,7 @@
 'use client';
-import Link from 'next/link';
 import { useState } from 'react';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Wallet, ReceiptText } from 'lucide-react';
+import { IconAction, IconLink } from '@/components/IconAction';
 import { AppShell } from '@/components/AppShell';
 import { PaymentEditor } from '@/components/PaymentEditor';
 import { PaymentHistory } from '@/components/PaymentHistory';
@@ -17,12 +17,8 @@ function Payments() {
   if (!state.eventName.trim() || state.members.length < 2)
     return (
       <div className="empty-state">
-        <h1>まずは、メンバーを登録</h1>
-        <p>イベント名と2人以上のメンバーが必要です。</p>
-        <Link className="button primary" href="/">
-          メンバーを登録する
-          <ArrowRight size={16} />
-        </Link>
+        <h1>メンバー未登録</h1>
+        <IconLink label="メンバーを登録する" icon={ArrowRight} className="primary" href="/" />
       </div>
     );
   function complete() {
@@ -32,26 +28,22 @@ function Payments() {
   }
   return (
     <>
-      <div className="page-heading">
-        <p className="eyebrow">02 — THE PAYMENTS</p>
-        <h1>立て替えた分を、記録。</h1>
-        <p>
-          誰が、何に、いくら払った？
-          <br className="mobile-break" />
-          割り勘する人は、支払いごとに選べます。
-        </p>
-      </div>
+      <h1 className="sr-only">支払い</h1>
       <div className="total-strip">
         <div>
-          <span>これまでの立て替え</span>
+          <span title="立て替え合計">
+            <Wallet size={20} aria-hidden="true" />
+            <span className="sr-only">立て替え合計</span>
+          </span>
           <strong>{yen(total)}</strong>
         </div>
-        <span className="count-pill">{state.payments.length}件の支払い</span>
+        <span className="count-pill" aria-label={`${state.payments.length}件の支払い`}>
+          <ReceiptText size={14} aria-hidden="true" />
+          {state.payments.length}
+        </span>
       </div>
       {state.payments.some((p) => p.needsReview) && (
-        <div className="notice">
-          旧バージョンには対象者の記録がないため、全員を仮設定しています。該当する支払いを編集して、対象者を確認してください。端数は支払いごとに再計算されます。
-        </div>
+        <div className="notice">旧データは全員で仮計算。対象者を確認してください。</div>
       )}
       <PaymentEditor
         key={`${editing?.id ?? 'new'}-${formKey}`}
@@ -59,7 +51,7 @@ function Payments() {
         onDone={complete}
         onCancel={() => setEditing(undefined)}
       />
-      <p className="form-message" role="status">
+      <p className="sr-only" role="status">
         {message}
       </p>
       <PaymentHistory
@@ -72,20 +64,21 @@ function Payments() {
         }}
       />
       <div className="next-action">
-        <Link href="/" className="back-link">
-          <ArrowLeft size={16} />
-          メンバーに戻る
-        </Link>
+        <IconLink href="/" label="メンバーに戻る" icon={ArrowLeft} />
         {state.payments.length ? (
-          <Link className="button primary large-button" href="/result">
-            精算結果を見る
-            <ArrowRight size={18} />
-          </Link>
+          <IconLink
+            href="/result"
+            label="精算結果を見る"
+            icon={ArrowRight}
+            className="primary next-icon"
+          />
         ) : (
-          <button className="button primary large-button" disabled>
-            精算結果を見る
-            <ArrowRight size={18} />
-          </button>
+          <IconAction
+            label="精算結果を見る"
+            icon={ArrowRight}
+            className="primary next-icon"
+            disabled
+          />
         )}
       </div>
     </>

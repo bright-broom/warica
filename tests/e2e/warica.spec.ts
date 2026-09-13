@@ -30,7 +30,7 @@ test('complete flow: selected participants, immediate reload, edit, copy fallbac
   await page.getByRole('link', { name: '精算結果を見る' }).click();
   await expect(page).toHaveURL(/\/result$/);
   await page.reload();
-  await expect(page.getByRole('heading', { name: 'お会計、すっきり。' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '精算', exact: true })).toBeVisible();
   const transfer = page.locator('.transfer-list li');
   await expect(transfer).toHaveCount(1);
   await expect(transfer).toContainText('はる');
@@ -145,14 +145,16 @@ test('unreadable data is retained and direct result navigation does not claim se
   await page.getByRole('button', { name: '保存を再試行' }).click();
   await expect(page.getByLabel('イベント名', { exact: true })).toBeVisible();
   await page.goto('/result');
-  await expect(page.getByRole('heading', { name: '支払いを記録してから精算' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '支払い未登録' })).toBeVisible();
   await expect(page.getByText('送金は不要です', { exact: true })).toHaveCount(0);
   await noOverflow(page);
 });
 
 test('empty and populated screens fit the viewport with long names', async ({ page }, testInfo) => {
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: '今日は、誰と？' })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'メンバー', exact: true, level: 1 }),
+  ).toBeVisible();
   await noOverflow(page);
   await page.screenshot({ path: `artifacts/${testInfo.project.name}-home.png`, fullPage: true });
   await page.getByLabel('イベント名', { exact: true }).fill('長いイベント名'.repeat(6));
@@ -168,7 +170,7 @@ test('empty and populated screens fit the viewport with long names', async ({ pa
   await page.getByRole('button', { name: 'この支払いを追加する' }).click();
   await noOverflow(page);
   await page.getByRole('link', { name: '精算結果を見る' }).click();
-  await expect(page.getByRole('heading', { name: 'お会計、すっきり。' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '精算', exact: true })).toBeVisible();
   await noOverflow(page);
   await page.screenshot({ path: `artifacts/${testInfo.project.name}-result.png`, fullPage: true });
 });
@@ -188,7 +190,9 @@ test('clipboard success, deletion cancellation and stale-tab protection', async 
   await page.getByRole('link', { name: '精算結果を見る' }).click();
   await page.getByRole('button', { name: '精算結果をコピー' }).click();
   await expect(
-    page.getByText('精算結果をコピーしました。チャットに貼り付けて共有できます。'),
+    page
+      .getByRole('status')
+      .filter({ hasText: '精算結果をコピーしました。チャットに貼り付けて共有できます。' }),
   ).toBeVisible();
   expect(await page.evaluate(() => navigator.clipboard.readText())).toContain(
     'はる → あおい：¥1,000',
@@ -246,13 +250,11 @@ test('a user-confirmed backup can recover an otherwise unreadable event', async 
   await expect(page.getByRole('heading', { name: '保存データを確認してください' })).toBeVisible();
   await expect(page.getByRole('button', { name: '読み込む', exact: true })).toBeEnabled();
   page.once('dialog', (dialog) => dialog.accept());
-  await page
-    .getByLabel('バックアップファイル')
-    .setInputFiles({
-      name: 'backup.json',
-      mimeType: 'application/json',
-      buffer: Buffer.from(backup),
-    });
+  await page.getByLabel('バックアップファイル').setInputFiles({
+    name: 'backup.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(backup),
+  });
   await expect(page.getByLabel('イベント名', { exact: true })).toHaveValue('週末の京都旅行');
   await expect(page.locator('.member-list li')).toHaveCount(3);
   await page.reload();

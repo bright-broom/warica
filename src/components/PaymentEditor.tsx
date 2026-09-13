@@ -1,6 +1,18 @@
 'use client';
 import { useState, type FormEvent } from 'react';
-import { Check, Plus, ReceiptText } from 'lucide-react';
+import {
+  Check,
+  Plus,
+  ReceiptText,
+  X,
+  ListChecks,
+  Square,
+  Users,
+  UserRound,
+  Banknote,
+  Info,
+} from 'lucide-react';
+import { IconAction } from './IconAction';
 import { useWarikanStore } from '@/app/useWarikanStore';
 import type { Payment } from '@/lib/types';
 import { calculatePaymentSplit, yen } from '@/lib/calculations';
@@ -44,17 +56,16 @@ export function PaymentEditor({
         <span className="section-icon">
           <ReceiptText size={19} />
         </span>
-        <h2>{payment ? '支払いを編集' : '支払いを追加'}</h2>
-        {payment && (
-          <button className="text-button" onClick={onCancel}>
-            キャンセル
-          </button>
-        )}
+        <h2 className="sr-only">{payment ? '支払いを編集' : '支払いを追加'}</h2>
+        {payment && <IconAction label="編集をキャンセル" icon={X} onClick={onCancel} />}
       </div>
       <form onSubmit={submit} className="payment-form">
         <div className="form-row">
           <div className="field">
-            <label htmlFor="payer">支払った人</label>
+            <label htmlFor="payer" title="支払った人">
+              <UserRound size={17} aria-hidden="true" />
+              <span className="sr-only">支払った人</span>
+            </label>
             <select
               id="payer"
               className="text-input"
@@ -69,7 +80,10 @@ export function PaymentEditor({
             </select>
           </div>
           <div className="field">
-            <label htmlFor="amount">金額</label>
+            <label htmlFor="amount" title="金額">
+              <Banknote size={17} aria-hidden="true" />
+              <span className="sr-only">金額</span>
+            </label>
             <div className="amount-input">
               <span>¥</span>
               <input
@@ -85,12 +99,12 @@ export function PaymentEditor({
             </div>
           </div>
         </div>
-        <p id="amount-hint" className="small muted amount-hint">
+        <p id="amount-hint" className="sr-only">
           1〜1,000,000円・整数で入力
         </p>
         <div className="field">
-          <label htmlFor="memo">
-            何の支払い？ <span className="optional">任意</span>
+          <label htmlFor="memo" className="sr-only">
+            何の支払い？
           </label>
           <input
             id="memo"
@@ -98,22 +112,22 @@ export function PaymentEditor({
             value={memo}
             onChange={(e) => setMemo(e.target.value)}
             maxLength={100}
-            placeholder="例：ランチ、ホテル、タクシー"
+            placeholder="内容（任意）"
           />
         </div>
         <fieldset className="participants">
-          <legend>割り勘に含める人</legend>
+          <legend title="割り勘に含める人">
+            <Users size={18} aria-hidden="true" />
+            <span className="sr-only">割り勘に含める人</span>
+          </legend>
           <div className="participants-hint">
-            <p>支払った本人も含めて選べます。</p>
-            <button
-              type="button"
-              className="text-button"
+            <IconAction
+              label={selected.length === members.length ? '全員の選択を解除' : '全員を選択'}
+              icon={selected.length === members.length ? Square : ListChecks}
               onClick={() =>
                 setParticipants(selected.length === members.length ? [] : members.map((m) => m.id))
               }
-            >
-              {selected.length === members.length ? '全員の選択を解除' : '全員を選択'}
-            </button>
+            />
           </div>
           <div className="participant-grid">
             {members.map((m) => (
@@ -142,7 +156,10 @@ export function PaymentEditor({
         </fieldset>
         <div className="split-preview" aria-live="polite">
           <div>
-            <span className="small">{selected.length}人で割り勘</span>
+            <span className="split-count" aria-label={`${selected.length}人で割り勘`}>
+              <Users size={16} aria-hidden="true" />
+              {selected.length}
+            </span>
             <strong>
               {shares.length
                 ? shares[0] === shares[shares.length - 1]
@@ -152,20 +169,27 @@ export function PaymentEditor({
               <span> / 人</span>
             </strong>
           </div>
-          <p>端数は対象者の登録順に1円ずつ配分。</p>
+          <details className="calculation-help">
+            <summary aria-label="計算ルール" title="計算ルール">
+              <Info size={16} aria-hidden="true" />
+            </summary>
+            <p>端数は対象者の登録順に1円ずつ配分。金額は1〜1,000,000円の整数。</p>
+          </details>
         </div>
         {error && (
           <p className="inline-error" role="alert">
             {error}
           </p>
         )}
-        <button
-          className="button primary full-width"
-          disabled={!valid || !selected.length || !payerId}
-        >
-          {payment ? <Check size={17} /> : <Plus size={17} />}
-          {payment ? '変更を保存する' : 'この支払いを追加する'}
-        </button>
+        <div className="form-actions">
+          <IconAction
+            type="submit"
+            label={payment ? '変更を保存する' : 'この支払いを追加する'}
+            icon={payment ? Check : Plus}
+            className="primary"
+            disabled={!valid || !selected.length || !payerId}
+          />
+        </div>
       </form>
     </section>
   );

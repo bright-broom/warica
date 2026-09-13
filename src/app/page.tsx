@@ -1,7 +1,18 @@
 'use client';
-import Link from 'next/link';
 import { useState, type FormEvent } from 'react';
-import { ArrowRight, Check, Coffee, Pencil, Plus, Users, X } from 'lucide-react';
+import {
+  ArrowRight,
+  Check,
+  Coffee,
+  Pencil,
+  Plus,
+  Users,
+  X,
+  Plane,
+  Utensils,
+  House,
+} from 'lucide-react';
+import { IconAction, IconLink } from '@/components/IconAction';
 import { AppShell, Avatar } from '@/components/AppShell';
 import { useWarikanStore } from './useWarikanStore';
 
@@ -30,22 +41,13 @@ function MemberSetup() {
   }
   return (
     <>
-      <div className="page-heading">
-        <p className="eyebrow">01 — THE PEOPLE</p>
-        <h1>今日は、誰と？</h1>
-        <p>
-          旅行も、ごはんも、いつもの集まりも。
-          <br className="mobile-break" />
-          まずはイベントとメンバーを登録しましょう。
-        </p>
-      </div>
+      <h1 className="sr-only">メンバー</h1>
       <section className="panel setup-panel">
         <div className="section-heading">
           <span className="section-icon">
             <Coffee size={19} />
           </span>
-          <h2>集まりの名前</h2>
-          <span className="field-meta">あとから変更できます</span>
+          <h2 className="sr-only">イベント</h2>
         </div>
         <label htmlFor="event-name" className="sr-only">
           イベント名
@@ -55,16 +57,17 @@ function MemberSetup() {
           className="text-input event-input"
           value={state.eventName}
           onChange={(e) => setEventName(e.target.value)}
-          placeholder="例：週末の京都旅行"
+          placeholder="イベント名"
           maxLength={50}
           autoComplete="off"
         />
         <div className="suggestions">
-          <span>たとえば</span>
-          {['週末の旅行', 'みんなでごはん', 'ホームパーティー'].map((label) => (
-            <button key={label} onClick={() => setEventName(label)}>
-              {label}
-            </button>
+          {[
+            { label: '週末の旅行', icon: Plane },
+            { label: 'みんなでごはん', icon: Utensils },
+            { label: 'ホームパーティー', icon: House },
+          ].map(({ label, icon }) => (
+            <IconAction key={label} label={label} icon={icon} onClick={() => setEventName(label)} />
           ))}
         </div>
       </section>
@@ -73,10 +76,9 @@ function MemberSetup() {
           <span className="section-icon">
             <Users size={19} />
           </span>
-          <h2>参加するメンバー</h2>
+          <h2 className="sr-only">メンバー</h2>
           <span className="count-pill">{state.members.length}人</span>
         </div>
-        <p className="section-description">自分の名前も忘れずに。2人から始められます。</p>
         <form className="member-form" onSubmit={add}>
           <label htmlFor="member-name" className="sr-only">
             メンバーの名前
@@ -86,7 +88,7 @@ function MemberSetup() {
             className="text-input"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="名前を入力"
+            placeholder="名前"
             maxLength={20}
             autoComplete="off"
             onKeyDown={(e) => {
@@ -94,10 +96,13 @@ function MemberSetup() {
                 e.preventDefault();
             }}
           />
-          <button className="button primary" disabled={!name.trim()}>
-            <Plus size={18} />
-            <span>追加</span>
-          </button>
+          <IconAction
+            type="submit"
+            label="追加"
+            icon={Plus}
+            className="primary"
+            disabled={!name.trim()}
+          />
         </form>
         {error && (
           <p className="inline-error" role="alert">
@@ -128,12 +133,18 @@ function MemberSetup() {
                         if (e.key === 'Escape') setEditId(null);
                       }}
                     />
-                    <button className="icon-button" aria-label="名前を保存" onClick={saveEdit}>
+                    <button
+                      className="icon-button"
+                      aria-label="名前を保存"
+                      title="名前を保存"
+                      onClick={saveEdit}
+                    >
                       <Check size={18} />
                     </button>
                     <button
                       className="icon-button"
                       aria-label="編集をキャンセル"
+                      title="キャンセル"
                       onClick={() => setEditId(null)}
                     >
                       <X size={18} />
@@ -146,6 +157,7 @@ function MemberSetup() {
                     <button
                       className="icon-button"
                       aria-label={`${member.name}の名前を編集`}
+                      title="編集"
                       onClick={() => {
                         setEditId(member.id);
                         setEditName(member.name);
@@ -156,6 +168,7 @@ function MemberSetup() {
                     <button
                       className="icon-button"
                       aria-label={`${member.name}を削除`}
+                      title="削除"
                       onClick={() => {
                         const result = removeMember(member.id);
                         setError(result.ok ? '' : result.error);
@@ -168,47 +181,25 @@ function MemberSetup() {
               </li>
             ))}
           </ul>
-        ) : (
-          <div className="member-empty">
-            <span className="empty-avatars">
-              <span>A</span>
-              <span>B</span>
-              <span>＋</span>
-            </span>
-            <p>楽しい時間を過ごすメンバーを追加しよう。</p>
-          </div>
-        )}
-        <div className="panel-footnote">
-          <span className={`status-dot ${state.members.length >= 2 ? 'ready' : ''}`} />
-          {state.members.length >= 2
-            ? `${state.members.length}人のメンバーを登録しました`
-            : `あと${2 - state.members.length}人追加すると、次へ進めます`}
-        </div>
+        ) : null}
+        {state.members.length < 2 && <p className="minimum-hint">2人以上</p>}
       </section>
       <div className="next-action">
-        <p>
-          {ready
-            ? '準備できました。立て替えた支払いを記録しましょう。'
-            : 'イベント名と2人以上のメンバーを入力してください。'}
-        </p>
         {ready ? (
-          <Link className="button primary large-button" href="/payments">
-            支払いを記録する
-            <ArrowRight size={18} />
-          </Link>
+          <IconLink
+            label="支払いを記録する"
+            icon={ArrowRight}
+            className="primary next-icon"
+            href="/payments"
+          />
         ) : (
-          <button className="button primary large-button" disabled>
-            支払いを記録する
-            <ArrowRight size={18} />
-          </button>
+          <IconAction
+            label="支払いを記録する"
+            icon={ArrowRight}
+            className="primary next-icon"
+            disabled
+          />
         )}
-      </div>
-      <div className="how-it-works">
-        <span>名前を登録</span>
-        <ArrowRight size={14} />
-        <span>支払いを記録</span>
-        <ArrowRight size={14} />
-        <span>すっきり精算</span>
       </div>
     </>
   );
