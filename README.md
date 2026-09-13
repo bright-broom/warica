@@ -62,6 +62,8 @@ GitHub ActionsはNode.js 24で静的チェック、単体テスト、ビルド�
 
 公開環境の確認結果と再実行方法は[検証記録](docs/PRODUCTION_VERIFICATION.md)を参照してください。
 
+大量データの保存処理は `pnpm benchmark:storage` で計測できます。[計測条件と改善結果](docs/STORAGE_PERFORMANCE.md)を参照してください。
+
 ## 計算ルール
 
 1. 1回の立て替えを1件の支払いとして保存します。対象者は名前ではなくIDで保持します。

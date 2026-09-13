@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import {
   BACKUP_KEY,
+  MAX_FILE_SIZE,
   STORAGE_KEY,
   loadFromStorage,
   parseState,
@@ -10,6 +11,7 @@ import {
   type StoragePort,
 } from '../src/lib/storage';
 import { emptyState, type WarikanState } from '../src/lib/types';
+import { MAX_PAYMENTS } from '../src/lib/validation';
 
 const event: WarikanState = {
   ...emptyState(),
@@ -203,4 +205,57 @@ test('valid checksums cannot bypass structural validation or future-version reje
   for (const variant of variants) assert.equal(parseState(container(variant)).ok, false);
   assert.equal(parseState(container(event, '99.0.0')).ok, false);
   assert.equal(parseState('x'.repeat(2 * 1024 * 1024 + 1)).ok, false);
+});
+
+test('the maximum-size ledger validates every record, including the final payment', () => {
+  const payments = Array.from({ length: MAX_PAYMENTS }, (_, i) => ({
+    ...event.payments[0],
+    id: `p${i}`,
+  }));
+  // Compact imported JSON can reach the count limit while remaining under 2 MB.
+  const raw = container({ ...event, payments });
+  assert.ok(new Blob([raw]).size <= MAX_FILE_SIZE);
+  const parsed = parseState(raw);
+  assert.ok(parsed.ok);
+  assert.deepEqual(parsed.data.payments, payments);
+
+  for (const last of [
+    { ...payments[MAX_PAYMENTS - 1], id: payments[0].id },
+    { ...payments[MAX_PAYMENTS - 1], participantIds: ['a', 'missing'] },
+    { ...payments[MAX_PAYMENTS - 1], participantIds: ['a', 'b', 'a'] },
+  ]) {
+    assert.equal(
+      parseState(container({ ...event, payments: [...payments.slice(0, -1), last] })).ok,
+      false,
+    );
+  }
+  assert.equal(
+    parseState(container({ ...event, payments: [...payments, { ...payments[0], id: 'extra' }] }))
+      .ok,
+    false,
+  );
+});
+
+test('large event saves retain the previous snapshot and reject a later invalid payment', () => {
+  const state: WarikanState = {
+    ...event,
+    payments: Array.from({ length: 6_000 }, (_, i) => ({ ...event.payments[0], id: `p${i}` })),
+  };
+  const storage = memory();
+  const first = saveToStorage(state, null, storage);
+  assert.ok(first.ok);
+  const changed = { ...state, eventName: '変更後' };
+  const second = saveToStorage(changed, first.data, storage);
+  assert.ok(second.ok);
+  assert.equal(storage.getItem(BACKUP_KEY), first.data);
+  const loaded = loadFromStorage(storage);
+  assert.ok(loaded.ok);
+  assert.deepEqual(loaded.data.state, changed);
+
+  const invalid = { ...changed, payments: [...state.payments, state.payments[0]] };
+  const rejected = saveToStorage(invalid, second.data, storage);
+  assert.ok(!rejected.ok);
+  assert.equal(rejected.code, 'invalid');
+  assert.equal(storage.getItem(STORAGE_KEY), second.data);
+  assert.equal(storage.getItem(BACKUP_KEY), first.data);
 });
