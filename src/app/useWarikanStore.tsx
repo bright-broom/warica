@@ -68,8 +68,8 @@ function useStore() {
     load();
   }, []);
 
-  function persist(next: WarikanState): boolean {
-    const result = saveToStorage(next, rawRef.current);
+  function persist(next: WarikanState, expectedRaw = rawRef.current): boolean {
+    const result = saveToStorage(next, expectedRaw);
     if (result.ok) {
       rawRef.current = result.data;
       setStorageError('');
@@ -98,6 +98,33 @@ function useStore() {
     stateRef.current = updated;
     setState(updated);
     persist(updated);
+    return { ok: true, data: undefined };
+  }
+
+  // Replacing an event is destructive: durable storage must succeed before publishing
+  // the new state or clearing drafts. Ordinary edits deliberately retain unsaved input.
+  function replaceEvent(
+    next: WarikanState,
+    expectedRaw = rawRef.current,
+    nextNotice = '',
+  ): Result<void> {
+    if (!isLoaded) return { ok: false, error: '保存データの読み込みを完了してください。' };
+    // A fresh stamp also invalidates old session drafts if clearing them fails.
+    // Avoid collisions with the current/imported event, even within one millisecond.
+    let timestamp = Date.now();
+    const previousStamps = [stateRef.current.lastUpdated, next.lastUpdated].map(Date.parse);
+    while (previousStamps.includes(timestamp)) timestamp += 1;
+    const updated = { ...next, lastUpdated: new Date(timestamp).toISOString() };
+    if (!persist(updated, expectedRaw))
+      return {
+        ok: false,
+        error: 'イベントを保存できませんでした。現在のデータと下書きを保持しています。',
+      };
+    stateRef.current = updated;
+    setState(updated);
+    setEventRevision((revision) => revision + 1);
+    setLoadBlocked(false);
+    setNotice(nextNotice);
     return { ok: true, data: undefined };
   }
 
@@ -217,47 +244,29 @@ function useStore() {
     resetAll(): Result<void> {
       if (!isLoaded || loadBlocked)
         return { ok: false, error: '保存データを読み込んでからやり直してください。' };
-      const next = emptyState();
-      // Never discard the current event if storing the reset fails.
-      if (!persist(next))
-        return {
-          ok: false,
-          error: '新しいイベントを保存できませんでした。現在のデータを保持しています。',
-        };
-      stateRef.current = next;
-      setState(next);
-      setEventRevision((revision) => revision + 1);
-      setNotice('');
-      return { ok: true, data: undefined };
+      return replaceEvent(emptyState());
     },
     importBackup(raw: string): Result<void> {
       const result = parseState(raw);
       if (!result.ok) return result;
+      let expectedRaw = rawRef.current;
       if (loadBlocked) {
         // The file has been validated and the user explicitly confirmed replacement.
+        // Keep the provider's storage baseline unchanged until the write succeeds.
         try {
-          rawRef.current = window.localStorage.getItem(STORAGE_KEY);
+          expectedRaw = window.localStorage.getItem(STORAGE_KEY);
         } catch {
           return {
             ok: false,
             error: 'ブラウザの保存領域にアクセスできません。設定を確認してください。',
           };
         }
-        if (!persist(result.data))
-          return {
-            ok: false,
-            error: 'バックアップを保存できませんでした。元のデータは変更していません。',
-          };
-        stateRef.current = result.data;
-        setState(result.data);
-        setEventRevision((revision) => revision + 1);
-        setLoadBlocked(false);
-        setNotice('バックアップファイルから復元しました。');
-        return { ok: true, data: undefined };
       }
-      const imported = commit(result.data);
-      if (imported.ok) setEventRevision((revision) => revision + 1);
-      return imported;
+      return replaceEvent(
+        result.data,
+        expectedRaw,
+        loadBlocked ? 'バックアップファイルから復元しました。' : '',
+      );
     },
   };
 }
