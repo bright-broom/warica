@@ -72,7 +72,7 @@ export default function ResultPage() {
           してください。
         </Notice>
       )}
-      <Panel tone="inverse" className="space-y-5 py-8 sm:py-10">
+      <Panel tone="inverse" className="space-y-4 border-t-4 border-t-accent py-6 sm:py-8">
         <p className="text-sm text-sub/75 wrap-anywhere">{state.eventName}</p>
         <div>
           <span className="sr-only">合計</span>
@@ -99,7 +99,7 @@ export default function ResultPage() {
           <Badge>{settlements.length}件</Badge>
         </SectionHeader>
         <Button
-          className="mb-5 w-full gap-2 rounded-control"
+          className="mb-5 ml-auto flex w-fit gap-2 rounded-control"
           aria-label="送金一覧を一括コピー"
           onClick={() => void copy()}
         >

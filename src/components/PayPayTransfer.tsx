@@ -117,7 +117,7 @@ export function PayPayTransfer({ settlement }: { settlement: Settlement }) {
               aria-invalid={!!error}
             />
           </Field>
-          <div className="flex justify-end gap-1">
+          <div className="ml-auto flex max-w-[6.25rem] flex-wrap justify-end gap-1 sm:max-w-none">
             {link && (
               <IconAction
                 label={`${label}請求リンクを削除`}

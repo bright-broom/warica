@@ -241,7 +241,7 @@ test('clipboard success, deletion cancellation and stale-tab protection', async 
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(
     '週末の京都旅行｜精算結果\n合計 ¥3,000 / 3人 / 1件\n\nはる → あおい：¥1,000\nりく → あおい：¥1,000',
   );
-  await page.getByRole('link', { name: 'WARICA ホーム' }).click();
+  await page.getByRole('link', { name: 'メンバー', exact: true }).click();
   await expect(page.getByLabel('イベント名', { exact: true })).toHaveValue('週末の京都旅行');
   const stale = await context.newPage();
   await stale.goto('/');
@@ -347,7 +347,7 @@ test('all routes inherit the shared theme and keep a single persistent shell', a
   );
   await expect(page.getByTestId('app-shell')).toHaveAttribute('data-persisted', 'yes');
   await expect(page.getByRole('main')).toHaveCount(1);
-  await page.getByRole('link', { name: 'WARICA ホーム' }).click();
+  await page.getByRole('link', { name: 'メンバー', exact: true }).click();
   await expect(page.getByTestId('app-shell')).toHaveAttribute('data-persisted', 'yes');
   await expect(page.getByLabel('イベント名', { exact: true })).toHaveValue('週末の京都旅行');
 });
@@ -358,7 +358,9 @@ test('payment drafts survive route changes and continuous entry keeps payer and 
 }) => {
   await setup(page);
   if (isMobile) {
-    await page.evaluate(() => window.scrollTo(0, 0));
+    await page
+      .getByRole('button', { name: 'この支払いを追加する' })
+      .evaluate((element) => element.scrollIntoView({ block: 'center' }));
     const submit = await page.getByRole('button', { name: 'この支払いを追加する' }).boundingBox();
     const dock = await page.getByRole('navigation', { name: '割り勘の手順' }).boundingBox();
     expect(submit && dock && submit.y + submit.height <= dock.y).toBeTruthy();
@@ -571,4 +573,64 @@ test('unreadable draft storage can be retried without overwriting the saved draf
   await page.getByRole('link', { name: '支払い', exact: true }).click();
   await expect(page.getByLabel('金額', { exact: true })).toHaveValue('750');
   await expect(page.locator('main [role=alert]')).toHaveCount(0);
+});
+
+test('mobile actions stay in the right half with usable touch targets', async ({
+  page,
+  isMobile,
+}) => {
+  test.skip(!isMobile, 'Right hand layout applies to phones.');
+  async function rightHandActions() {
+    const controls = page.locator(
+      'button:visible, [role="checkbox"]:visible, [role="radio"]:visible, nav a:visible, a[data-slot="button"]:visible',
+    );
+    const targets = await controls.evaluateAll((elements) =>
+      elements.map((element) => ({
+        box: element.getBoundingClientRect().toJSON(),
+        label: element.getAttribute('aria-label') || element.textContent,
+      })),
+    );
+    expect(targets.length).toBeGreaterThan(0);
+    for (const { box, label } of targets) {
+      expect(box!.x + box!.width / 2, label || 'right half').toBeGreaterThanOrEqual(
+        page.viewportSize()!.width / 2,
+      );
+      expect(box!.width, label || 'touch width').toBeGreaterThanOrEqual(44);
+      expect(box!.height, label || 'touch height').toBeGreaterThanOrEqual(44);
+    }
+    await noOverflow(page);
+  }
+  await setup(page);
+  const main = await page.getByRole('main').boundingBox();
+  const dock = await page.getByRole('navigation', { name: '割り勘の手順' }).boundingBox();
+  expect(main && dock && main.y + main.height <= dock.y).toBeTruthy();
+  await rightHandActions();
+  await page.getByRole('link', { name: 'メンバー', exact: true }).click();
+  await expect(page.getByLabel('メンバーの名前', { exact: true })).toBeVisible();
+  await rightHandActions();
+  await page.getByRole('button', { name: 'あおいの名前を編集' }).click();
+  await rightHandActions();
+  await page.getByRole('button', { name: '編集をキャンセル' }).click();
+  await page.getByRole('link', { name: '支払い', exact: true }).click();
+  await page.getByLabel('金額', { exact: true }).fill('3000');
+  await page.getByRole('button', { name: 'この支払いを追加する' }).click();
+  await rightHandActions();
+  await page.getByRole('link', { name: '精算結果を見る' }).click();
+  await expect(page.getByTestId('transfer-list')).toBeVisible();
+  await rightHandActions();
+  await page
+    .getByRole('button', { name: /PayPay請求リンクを登録/ })
+    .first()
+    .click();
+  await rightHandActions();
+  await page
+    .getByLabel('PayPay請求リンク', { exact: true })
+    .fill('https://www.paypay.ne.jp/example');
+  await page.getByRole('button', { name: 'リンク編集をキャンセル' }).click();
+  await menu(page, '新しく始める');
+  await rightHandActions();
+  await page
+    .getByRole('alertdialog')
+    .getByRole('button', { name: 'キャンセル', exact: true })
+    .click();
 });

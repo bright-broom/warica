@@ -35,6 +35,7 @@ import { MAX_FILE_SIZE, parseState, serializeState } from '@/lib/storage';
 import { yen } from '@/lib/calculations';
 
 export function AppShell({ children }: { children: ReactNode }) {
+  const mainRef = useRef<HTMLElement>(null);
   const path = usePathname(),
     router = useRouter();
   const store = useWarikanStore();
@@ -49,6 +50,9 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const steps = navigation(state);
   const current = steps.find((step) => step.href === path);
+  useEffect(() => {
+    mainRef.current?.scrollTo({ top: 0 });
+  }, [path]);
   const saveLabel = !isLoaded
     ? '読み込み中'
     : storageError || workspace.storageError
@@ -140,7 +144,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div
-      className="mx-auto min-h-dvh max-w-6xl px-4 sm:px-8 lg:px-12"
+      className="mx-auto min-h-dvh max-w-6xl px-4 max-lg:flex max-lg:h-dvh max-lg:flex-col sm:px-8 lg:px-12"
       data-testid="app-shell"
       inert={menuOpen || undefined}
     >
@@ -150,19 +154,20 @@ export function AppShell({ children }: { children: ReactNode }) {
       >
         本文へ移動
       </a>
-      <header className="flex h-20 items-center justify-between sm:h-24">
-        <Link
-          href={routes.members}
-          className="flex items-center gap-3 text-3xl font-bold tracking-tight"
-          aria-label="WARICA ホーム"
-        >
+      <header className="flex h-18 shrink-0 items-center justify-between sm:h-22">
+        <div className="relative flex items-center gap-2.5 text-2xl font-bold tracking-tight sm:text-3xl">
+          <Link
+            href={routes.members}
+            className="absolute inset-0 hidden rounded-control lg:block"
+            aria-label="WARICA ホーム"
+          />
           <span className="flex size-10 items-center justify-center rounded-control accent-surface">
             <Split size={22} strokeWidth={2.5} aria-hidden="true" />
           </span>
           <span>
             warica<span className="text-main/40">.</span>
           </span>
-        </Link>
+        </div>
         <div className="flex items-center gap-1">
           <span
             className="flex size-control items-center justify-center text-muted-foreground"
@@ -217,23 +222,25 @@ export function AppShell({ children }: { children: ReactNode }) {
           </DropdownMenu>
         </div>
       </header>
-      <div className="grid items-start gap-6 lg:grid-cols-[12rem_minmax(0,1fr)] lg:gap-12">
+      <div className="grid min-h-0 items-start gap-6 max-lg:flex-1 max-lg:grid-rows-[minmax(0,1fr)] max-lg:pb-[calc(5.5rem+env(safe-area-inset-bottom))] lg:grid-cols-[12rem_minmax(0,1fr)] lg:gap-12">
         <aside className="contents lg:sticky lg:top-8 lg:block lg:min-w-0">
           <nav
             aria-label="割り勘の手順"
-            className="fixed right-4 bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-4 z-40 mx-auto max-w-sm rounded-panel border border-main/15 bg-sub/95 p-2 shadow-xl shadow-main/10 backdrop-blur-lg lg:static lg:max-w-none lg:bg-sub lg:shadow-none"
+            className="fixed right-4 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-40 w-[10.5rem] rounded-panel border border-main bg-main/95 p-2 shadow-lg shadow-main/20 backdrop-blur-lg lg:static lg:w-full lg:bg-main lg:shadow-none"
           >
-            <ol className="grid grid-cols-3 gap-2">
+            <ol className="grid grid-cols-3 gap-1 lg:gap-2">
               {steps.map((step) => {
                 const active = path === step.href;
                 const style = cx(
-                  'flex h-14 w-full items-center justify-center rounded-control transition-colors',
-                  active ? 'accent-surface text-main' : 'text-muted-foreground hover:bg-main/5',
+                  'flex h-12 w-full items-center justify-center rounded-control transition-shadow focus-visible:outline-accent focus-visible:ring-accent lg:h-14',
+                  active
+                    ? 'accent-surface text-main'
+                    : 'bg-main/0 text-sub/80 hover:bg-sub/10 hover:text-sub',
                 );
                 return (
                   <li key={step.href}>
                     {step.ready && isLoaded && !loadBlocked ? (
-                      <Button asChild variant={active ? 'default' : 'ghost'} className={style}>
+                      <Button asChild variant={active ? 'default' : 'secondary'} className={style}>
                         <Link
                           href={step.href}
                           className={style}
@@ -246,7 +253,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                       </Button>
                     ) : (
                       <Button
-                        variant={active ? 'default' : 'ghost'}
+                        variant={active ? 'default' : 'secondary'}
                         className={cx(style, 'disabled:cursor-not-allowed disabled:opacity-30')}
                         aria-label={step.label}
                         title={step.label}
@@ -290,12 +297,17 @@ export function AppShell({ children }: { children: ReactNode }) {
             </dl>
           </div>
         </aside>
-        <main id="main" tabIndex={-1} className="min-w-0 space-y-5 pb-32 sm:space-y-6 lg:pb-8">
+        <main
+          ref={mainRef}
+          id="main"
+          tabIndex={-1}
+          className="min-h-0 min-w-0 space-y-4 scroll-pt-4 scroll-pb-6 pb-6 max-lg:h-full max-lg:overflow-y-auto sm:space-y-5 lg:pb-8"
+        >
           {(storageError || workspace.storageError) && (
             <Notice alert>
               {storageError && <p>{storageError}</p>}
               {workspace.storageError && <p>{workspace.storageError}</p>}
-              <div className="flex flex-wrap gap-2">
+              <div className="ml-auto flex max-w-[6.5rem] flex-wrap justify-end gap-2 sm:max-w-none">
                 <IconAction
                   label="保存を再試行"
                   icon={RotateCcw}

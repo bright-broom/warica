@@ -64,7 +64,7 @@ export function PaymentHistory({
                     {yen(payment.amount)}
                   </strong>
                   {onEdit && (
-                    <div className="flex">
+                    <div className="ml-auto flex">
                       <IconAction
                         label={`${payment.memo || '立て替え'}を編集`}
                         icon={Pencil}

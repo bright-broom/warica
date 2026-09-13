@@ -54,7 +54,7 @@ export default function HomePage() {
         </Label>
         <TextInput
           id="event-name"
-          className="border-main/10 bg-sub/70 text-lg font-semibold"
+          className="border-main/25 bg-sub text-lg font-semibold"
           value={state.eventName}
           onChange={(e) => setEventName(e.target.value)}
           placeholder="イベント名"

@@ -20,7 +20,7 @@
   --border: color-mix(in srgb, var(--brand-main) 15%, var(--brand-sub));
   --input: color-mix(in srgb, var(--brand-main) 20%, var(--brand-sub));
   --ring: var(--brand-main);
-  --radius: 0.875rem;
+  --radius: 0.625rem;
 }
 
 /* Expose only the three shared brand roles to Tailwind utilities. */
@@ -52,8 +52,8 @@
   --color-sub: var(--brand-sub);
   --color-accent: var(--brand-accent);
   --font-sans: Arial, 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
-  --radius-control: 0.875rem;
-  --radius-panel: 1.5rem;
+  --radius-control: 0.625rem;
+  --radius-panel: 1rem;
   --spacing-control: 3rem;
 }
 
@@ -77,6 +77,7 @@
   }
   body {
     @apply min-w-0;
+    background: var(--brand-canvas);
   }
   button,
   a,

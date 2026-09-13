@@ -11,6 +11,7 @@ export const themeVariables = {
   '--brand-main': palette.main,
   '--brand-sub': palette.sub,
   '--brand-accent': palette.accent,
+  '--brand-canvas': 'color-mix(in srgb, var(--brand-main) 4%, var(--brand-sub))',
   '--brand-accent-mint': 'hsl(from var(--brand-accent) calc(h - 24) s l)',
   '--brand-accent-light': 'color-mix(in srgb, var(--brand-accent-mint) 48%, var(--brand-sub))',
   '--brand-accent-gradient':
