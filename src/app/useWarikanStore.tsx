@@ -265,6 +265,13 @@ function useStore() {
         payments: stateRef.current.payments.filter((p) => p.id !== id),
       });
     },
+    resetPayments(): Result<void> {
+      if (!isLoaded || loadBlocked)
+        return { ok: false, error: '保存データの読み込みを完了してください。' };
+      // Persist before clearing the workspace. A new stamp invalidates old drafts
+      // even if sessionStorage cannot be updated after the confirmed reset.
+      return replaceEvent({ ...stateRef.current, payments: [], paypayLinks: [] });
+    },
     savePayPayLink(settlement: Settlement, input: string): Result<void> {
       const current = stateRef.current;
       const transfer = currentSettlements(current).find(
