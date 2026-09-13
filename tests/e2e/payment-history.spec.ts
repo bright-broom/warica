@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 import { serializeState, STORAGE_KEY } from '../../src/lib/storage';
+import { goToStep } from './page-arrows';
 
 async function seed(page: Page, count: number) {
   const raw = serializeState({
@@ -45,7 +46,8 @@ test('both routes bound history rendering and search all records without filteri
   await history.getByRole('button', { name: '履歴の検索をクリア' }).click();
   await expect(search).toBeFocused();
   await expect(rows).toHaveCount(20);
-  await page.getByRole('link', { name: '精算結果を見る', exact: true }).click();
+  await goToStep(page, '/result');
+  await expect(page.getByTestId('transfer-list')).toContainText('¥500,000');
   await expect(rows).toHaveCount(20);
   await search.fill('0001');
   await expect(rows).toHaveCount(1);
