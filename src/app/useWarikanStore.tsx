@@ -127,7 +127,7 @@ function useStore() {
       return {
         ok: false,
         error:
-          'イベントの保存容量（2MB）に達しました。バックアップを保存して、新しいイベントを始めてください。',
+          'イベントの保存容量（2MB）に達しました。バックアップを保存して、不要な支払いを整理してください。',
       };
     }
     // One provider owns the state across routes. Synchronous saving also covers immediate reloads.
@@ -300,11 +300,6 @@ function useStore() {
       if (!linked || !validatePayPayUrl(url).ok || loadBlocked || !isLoaded) return false;
       // Recheck storage before leaving, including changes made by another tab.
       return persist(current);
-    },
-    resetAll(): Result<void> {
-      if (!isLoaded || loadBlocked)
-        return { ok: false, error: '保存データを読み込んでからやり直してください。' };
-      return replaceEvent(emptyState());
     },
     importBackup(raw: string): Result<void> {
       const result = parseState(raw);

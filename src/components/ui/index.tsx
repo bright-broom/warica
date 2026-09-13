@@ -24,9 +24,9 @@ import { Empty, EmptyMedia, EmptyContent } from './empty';
 // Domain presets compose shadcn/ui; the base primitives own behavior and styling.
 export const cx = cn;
 const panelTones = {
-  default: 'border-main/15 bg-sub',
-  soft: 'border-main/15 border-t-4 border-t-accent bg-sub',
-  inverse: 'border-main bg-main text-sub',
+  default: 'bg-sub',
+  soft: 'bg-sub',
+  inverse: 'bg-main text-sub',
 };
 export function Panel({
   tone = 'default',
@@ -38,11 +38,7 @@ export function Panel({
       {...props}
       data-ui="panel"
       data-tone={tone}
-      className={cn(
-        'block min-w-0 rounded-panel p-4 shadow-sm shadow-main/5 sm:p-6',
-        panelTones[tone],
-        className,
-      )}
+      className={cn('block min-w-0 rounded-panel p-4 sm:p-6', panelTones[tone], className)}
     />
   );
 }

@@ -74,7 +74,7 @@ export default function ResultPage() {
         </Notice>
       )}
       <Panel tone="inverse" className="space-y-4 border-t-4 border-t-accent py-6 sm:py-8">
-        <div className="pop-only pop-result-tag">
+        <div className="pop-result-tag">
           <PartyPopper size={20} aria-hidden="true" />
           おつかれさま！
         </div>

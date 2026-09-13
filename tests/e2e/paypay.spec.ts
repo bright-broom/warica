@@ -99,10 +99,11 @@ test('PayPay request links persist, copy and open the exact URL without marking 
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
-test('changed amounts invalidate links permanently and resetting clears link data', async ({
+test('changed amounts invalidate links permanently and importing a backup replaces link data', async ({
   page,
 }) => {
   await setup(page);
+  const backup = await page.evaluate((key) => localStorage.getItem(key)!, storageKey);
   await register(page);
   for (const amount of ['4000', '3000']) {
     await page.getByRole('link', { name: '支払い', exact: true }).click();
@@ -118,13 +119,16 @@ test('changed amounts invalidate links permanently and resetting clears link dat
     await expect(page.getByRole('link', { name: 'BからAへのPayPayを開く' })).toHaveCount(0);
   }
   await register(page);
-  await page.getByRole('button', { name: 'メニュー', exact: true }).click();
-  await page.getByRole('menuitem', { name: '新しく始める', exact: true }).click();
+  await page.getByLabel('バックアップファイル').setInputFiles({
+    name: 'backup.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(backup),
+  });
   await page
     .getByRole('alertdialog')
-    .getByRole('button', { name: '新しく始める', exact: true })
+    .getByRole('button', { name: '読み込む', exact: true })
     .click();
-  await expect(page.getByLabel('イベント名', { exact: true })).toHaveValue('');
+  await expect(page.getByLabel('イベント名', { exact: true })).toHaveValue('旅行');
   expect(
     await page.evaluate(
       (key) => JSON.parse(localStorage.getItem(key)!).data.paypayLinks ?? [],

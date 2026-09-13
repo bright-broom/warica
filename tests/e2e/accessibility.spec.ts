@@ -82,7 +82,7 @@ test('all pages and confirmation expose accessible names and readable text', asy
   await other.close();
   await page.getByRole('button', { name: 'メニュー' }).click();
   await scan('menu');
-  await page.getByRole('menuitem', { name: '新しく始める' }).click();
+  await page.getByRole('menuitem', { name: 'リフレッシュ' }).click();
   await expect(page.getByRole('alertdialog')).toBeVisible();
   await scan('confirmation');
 });

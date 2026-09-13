@@ -106,6 +106,7 @@ test('paging preserves drafts, clamps after deletion and edits the selected olde
   await history.getByRole('button', { name: '記録 0002を編集', exact: true }).click();
   await expect(page.getByLabel('何の支払い？')).toHaveValue('記録 0002');
   await page.getByLabel('何の支払い？').fill('修正済み');
+  await expect(page.getByLabel('金額', { exact: true })).toHaveValue('1001');
   await page.getByRole('button', { name: '変更を保存する', exact: true }).click();
   await expect(history.getByText('見つかりませんでした')).toBeVisible();
   await history.getByRole('button', { name: '履歴の検索をクリア' }).click();
