@@ -7,7 +7,7 @@ export const STORAGE_KEY = 'warican-app-data-v2';
 export const BACKUP_KEY = 'warican-backup-v2';
 export const MAX_FILE_SIZE = 2 * 1024 * 1024;
 export type StoragePort = Pick<Storage, 'getItem' | 'setItem'>;
-const STORAGE_CONFLICT_MESSAGE =
+export const STORAGE_CONFLICT_MESSAGE =
   '別の画面で保存データが変更されました。この画面の入力は保持しています。必要ならバックアップしてから、最新の保存データを読み込んでください。';
 type SaveResult =
   | { ok: true; data: string }

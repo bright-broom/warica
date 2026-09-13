@@ -23,6 +23,7 @@ import {
   serializeState,
   MAX_FILE_SIZE,
   STORAGE_KEY,
+  STORAGE_CONFLICT_MESSAGE,
 } from '@/lib/storage';
 import { MAX_MEMBERS, MAX_PAYMENTS, validateMemberName, validatePayment } from '@/lib/validation';
 import {
@@ -69,6 +70,37 @@ function useStore() {
   useEffect(() => {
     load();
   }, []);
+
+  useEffect(() => {
+    if (!isLoaded || loadBlocked) return;
+    let storage: Storage;
+    try {
+      storage = window.localStorage;
+    } catch {
+      return;
+    }
+    function check() {
+      try {
+        // Read the current value: queued storage events may describe an older write.
+        if (storage.getItem(STORAGE_KEY) !== rawRef.current) {
+          setStorageConflict(true);
+          setStorageError(STORAGE_CONFLICT_MESSAGE);
+        }
+      } catch {
+        setStorageError('保存データにアクセスできません。現在の入力は保持しています。');
+      }
+    }
+    function changed(event: StorageEvent) {
+      if (event.storageArea === storage && (event.key === STORAGE_KEY || event.key === null))
+        check();
+    }
+    window.addEventListener('storage', changed);
+    window.addEventListener('focus', check);
+    return () => {
+      window.removeEventListener('storage', changed);
+      window.removeEventListener('focus', check);
+    };
+  }, [isLoaded, loadBlocked]);
 
   function persist(next: WarikanState, expectedRaw = rawRef.current): boolean {
     const result = saveToStorage(next, expectedRaw);

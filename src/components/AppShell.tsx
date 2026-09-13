@@ -52,7 +52,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const current = steps.find((step) => step.href === path);
   useEffect(() => {
     mainRef.current?.scrollTo({ top: 0 });
-  }, [path]);
+  }, [path, store.eventRevision]);
   const saveLabel = !isLoaded
     ? '読み込み中'
     : storageError || workspace.storageError
@@ -334,6 +334,14 @@ export function AppShell({ children }: { children: ReactNode }) {
               {storageError && <p>{storageError}</p>}
               {workspace.storageError && <p>{workspace.storageError}</p>}
               <div className="ml-auto flex max-w-[6.5rem] flex-wrap justify-end gap-2 sm:max-w-none">
+                {storageConflict && (
+                  <IconAction
+                    label="最新の保存データを読み込む"
+                    icon={RefreshCw}
+                    variant="primary"
+                    onClick={() => void loadLatest()}
+                  />
+                )}
                 <IconAction
                   label="保存を再試行"
                   icon={RotateCcw}
