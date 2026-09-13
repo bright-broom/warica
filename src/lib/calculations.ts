@@ -1,274 +1,106 @@
-import type { Member, Payment, Settlement, MemberBalance, CalculationSummary } from './types';
-import { createPositiveAmount, createPositiveAmountUnsafe } from './types';
+import type { Member, Payment, MemberBalance, Settlement, WarikanState } from './types';
 
-/**
- * 高性能割り勘計算エンジン
- * - アルゴリズム最適化（O(n log n)）
- * - インテリジェントキャッシュシステム
- * - 数値精度保証と端数処理
- */
-
-/** 計算キャッシュストア */
-class CalculationCache {
-  private static instance: CalculationCache;
-  private cache = new Map<string, { data: unknown; timestamp: number; hits: number }>();
-  private readonly maxSize = 100;
-  private readonly ttl = 5 * 60 * 1000; // 5分
-
-  static getInstance(): CalculationCache {
-    if (!CalculationCache.instance) {
-      CalculationCache.instance = new CalculationCache();
-    }
-    return CalculationCache.instance;
-  }
-
-  private createKey(prefix: string, data: unknown): string {
-    return `${prefix}:${this.hashObject(data)}`;
-  }
-
-  private hashObject(obj: unknown): string {
-    const str = JSON.stringify(obj);
-    // 日本語対応のハッシュ関数（簡易実装）
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-      const char = str.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash = hash & hash; // 32bit整数変換
-    }
-    return Math.abs(hash).toString(16);
-  }
-
-  get<T>(prefix: string, data: unknown): T | null {
-    const key = this.createKey(prefix, data);
-    const entry = this.cache.get(key);
-    
-    if (!entry || Date.now() - entry.timestamp > this.ttl) {
-      this.cache.delete(key);
-      return null;
-    }
-
-    entry.hits++;
-    return entry.data as T;
-  }
-
-  set(prefix: string, data: unknown, result: unknown): void {
-    if (this.cache.size >= this.maxSize) {
-      this.evictLeastUsed();
-    }
-
-    const key = this.createKey(prefix, data);
-    this.cache.set(key, {
-      data: result,
-      timestamp: Date.now(),
-      hits: 1,
-    });
-  }
-
-  private evictLeastUsed(): void {
-    let minHits = Infinity;
-    let keyToEvict = '';
-
-    for (const [key, entry] of this.cache) {
-      if (entry.hits < minHits) {
-        minHits = entry.hits;
-        keyToEvict = key;
-      }
-    }
-
-    if (keyToEvict) {
-      this.cache.delete(keyToEvict);
-    }
-  }
-
-  clear(): void {
-    this.cache.clear();
-  }
-
-  getStats() {
-    return {
-      size: this.cache.size,
-      totalHits: Array.from(this.cache.values()).reduce((sum, entry) => sum + entry.hits, 0),
-    };
-  }
+/** Allocate whole yen without losing money. Earlier participants take the spare yen. */
+export function calculatePaymentSplit(amount: number, count: number): readonly number[] {
+  if (
+    !Number.isSafeInteger(amount) ||
+    amount < 0 ||
+    !Number.isSafeInteger(count) ||
+    count < 1 ||
+    count > 100
+  )
+    return [];
+  const base = Math.floor(amount / count);
+  return Array.from({ length: count }, (_, i) => base + (i < amount % count ? 1 : 0));
 }
 
-const cache = CalculationCache.getInstance();
-
-/** 数値精度ヘルパー */
-const roundToYen = (value: number): number => Math.round(value);
-const isValidAmount = (value: number): boolean => Number.isFinite(value) && value >= 0;
-
-/**
- * 最適化された収支計算
- * - 端数分散アルゴリズム改善
- * - O(n+m) 時間計算量保証
- */
-export const calculateMemberBalances = (
+export function calculateMemberBalances(
   members: readonly Member[],
-  payments: readonly Payment[]
-): readonly MemberBalance[] => {
-  if (members.length === 0) return [];
-
-  const cached = cache.get<readonly MemberBalance[]>('balances', { members, payments });
-  if (cached) return cached;
-
-  // 高精度計算のため、すべて整数で処理
-  const totalAmount = payments.reduce((sum, p) => sum + p.amount, 0);
-  if (!isValidAmount(totalAmount)) return [];
-
-  // 均等割りベース計算
-  const baseAmount = Math.floor(totalAmount / members.length);
-  const remainder = totalAmount - baseAmount * members.length;
-
-  // 支払い額集計（Map使用で高速化）
-  const paidAmounts = new Map<string, number>();
-  members.forEach(member => paidAmounts.set(member.id, 0));
-  
-  for (const payment of payments) {
-    const current = paidAmounts.get(payment.payerId) ?? 0;
-    paidAmounts.set(payment.payerId, current + payment.amount);
-  }
-
-  // 収支計算（端数は先頭から配分）
-  const balances: MemberBalance[] = members.map((member, index) => {
-    const paidAmount = paidAmounts.get(member.id) ?? 0;
-    const shouldPay = baseAmount + (index < remainder ? 1 : 0);
-    const balance = paidAmount - shouldPay;
-    const absAmount = Math.abs(balance);
-
-    return {
-      memberId: member.id,
-      memberName: member.name,
-      balance: roundToYen(balance),
-      status: balance > 0 ? 'receive' : balance < 0 ? 'pay' : 'settled',
-      absoluteAmount: createPositiveAmountUnsafe(absAmount) || createPositiveAmountUnsafe(1)!,
-    };
-  });
-
-  cache.set('balances', { members, payments }, balances);
-  return balances;
-};
-
-/**
- * 改良されたグリーディ最小送金アルゴリズム
- * - より効率的な送金パターン生成
- * - メモリ使用量最適化
- */
-export const calculateMinimalSettlements = (
-  balances: readonly MemberBalance[]
-): readonly Settlement[] => {
-  const cached = cache.get<readonly Settlement[]>('settlements', balances);
-  if (cached) return cached;
-
-  // 債権者・債務者を分離し、効率的にソート
-  const creditors = balances
-    .filter(b => b.balance > 0)
-    .map(b => ({ name: b.memberName, amount: b.balance }))
-    .sort((a, b) => b.amount - a.amount);
-
-  const debtors = balances
-    .filter(b => b.balance < 0)
-    .map(b => ({ name: b.memberName, amount: -b.balance }))
-    .sort((a, b) => b.amount - a.amount);
-
-  const settlements: Settlement[] = [];
-  let creditorIdx = 0;
-  let debtorIdx = 0;
-
-  // 改良グリーディアルゴリズム
-  while (creditorIdx < creditors.length && debtorIdx < debtors.length) {
-    const creditor = creditors[creditorIdx];
-    const debtor = debtors[debtorIdx];
-    const transferAmount = Math.min(creditor.amount, debtor.amount);
-
-    if (transferAmount > 0) {
-      const amount = createPositiveAmount(transferAmount);
-      if (amount.success) {
-        settlements.push({
-          from: debtor.name,
-          to: creditor.name,
-          amount: amount.data,
-        });
-      }
-
-      creditor.amount -= transferAmount;
-      debtor.amount -= transferAmount;
-    }
-
-    // 残額0の場合、次へ進む
-    if (creditor.amount === 0) creditorIdx++;
-    if (debtor.amount === 0) debtorIdx++;
-  }
-
-  cache.set('settlements', balances, settlements);
-  return settlements;
-};
-
-/**
- * 支払い分割の高精度計算
- */
-export const calculatePaymentSplit = (
-  totalAmount: number,
-  payeeCount: number
-): readonly number[] => {
-  if (payeeCount <= 0 || !isValidAmount(totalAmount)) return [];
-
-  const baseAmount = Math.floor(totalAmount / payeeCount);
-  const remainder = totalAmount - baseAmount * payeeCount;
-
-  return Array.from({ length: payeeCount }, (_, index) => 
-    baseAmount + (index < remainder ? 1 : 0)
+  payments: readonly Payment[],
+): readonly MemberBalance[] {
+  const balances = new Map(
+    members.map((m) => [
+      m.id,
+      { memberId: m.id, memberName: m.name, paid: 0, share: 0, balance: 0 },
+    ]),
   );
-};
+  for (const payment of payments) {
+    const payer = balances.get(payment.payerId);
+    if (
+      !payer ||
+      !Number.isSafeInteger(payment.amount) ||
+      payment.amount < 1 ||
+      !payment.participantIds.length ||
+      new Set(payment.participantIds).size !== payment.participantIds.length ||
+      payment.participantIds.some((id) => !balances.has(id))
+    ) {
+      throw new Error('支払いデータが不正です。');
+    }
+    payer.paid += payment.amount;
+    const shares = calculatePaymentSplit(payment.amount, payment.participantIds.length);
+    if (!shares.length) throw new Error('対象人数が不正です。');
+    payment.participantIds.forEach((id, i) => {
+      balances.get(id)!.share += shares[i];
+    });
+  }
+  return [...balances.values()].map((b) => ({ ...b, balance: b.paid - b.share }));
+}
 
-/**
- * 統計情報の包括計算
- */
-export const calculateStatistics = (
-  members: readonly Member[],
-  payments: readonly Payment[]
-): CalculationSummary => {
-  const cached = cache.get<CalculationSummary>('statistics', { members, payments });
-  if (cached) return cached;
+/** Greedy netting: at most n - 1 transfers, not a guarantee of the global minimum. */
+export function calculateSettlements(balances: readonly MemberBalance[]): readonly Settlement[] {
+  const creditors = balances
+    .filter((b) => b.balance > 0)
+    .map((b) => ({ ...b, remaining: b.balance }))
+    .sort((a, b) => b.remaining - a.remaining);
+  const debtors = balances
+    .filter((b) => b.balance < 0)
+    .map((b) => ({ ...b, remaining: -b.balance }))
+    .sort((a, b) => b.remaining - a.remaining);
+  const settlements: Settlement[] = [];
+  let c = 0,
+    d = 0;
+  while (c < creditors.length && d < debtors.length) {
+    const creditor = creditors[c],
+      debtor = debtors[d];
+    const amount = Math.min(creditor.remaining, debtor.remaining);
+    settlements.push({
+      fromId: debtor.memberId,
+      toId: creditor.memberId,
+      from: debtor.memberName,
+      to: creditor.memberName,
+      amount,
+    });
+    creditor.remaining -= amount;
+    debtor.remaining -= amount;
+    if (creditor.remaining === 0) c++;
+    if (debtor.remaining === 0) d++;
+  }
+  return settlements;
+}
 
-  const totalAmount = payments.reduce((sum, p) => sum + p.amount, 0);
-  const averagePerPerson = members.length > 0 ? totalAmount / members.length : 0;
-  
-  // 追加統計：決済数計算
-  const balances = calculateMemberBalances(members, payments);
-  const settlements = calculateMinimalSettlements(balances);
+export const yen = (value: number): string => `¥${value.toLocaleString('ja-JP')}`;
 
-  const stats: CalculationSummary = {
-    totalAmount: createPositiveAmountUnsafe(totalAmount) || createPositiveAmountUnsafe(0)!,
-    averagePerPerson: roundToYen(averagePerPerson),
-    paymentCount: payments.length,
-    memberCount: members.length,
-    settlementsCount: settlements.length,
-  };
-
-  cache.set('statistics', { members, payments }, stats);
-  return stats;
-};
-
-/**
- * 高度な分析関数
- */
-export const calculateAdvancedMetrics = (
-  members: readonly Member[],
-  payments: readonly Payment[]
-) => {
-  const balances = calculateMemberBalances(members, payments);
-  const totalBalance = balances.reduce((sum, b) => sum + Math.abs(b.balance), 0);
-  
-  return {
-    balances,
-    totalImbalance: totalBalance / 2, // 総不均衡額
-    maxCreditor: balances.reduce((max, b) => b.balance > max.balance ? b : max, balances[0]),
-    maxDebtor: balances.reduce((min, b) => b.balance < min.balance ? b : min, balances[0]),
-    settledCount: balances.filter(b => b.status === 'settled').length,
-  };
-};
-
-/** キャッシュ管理 */
-export const clearCalculationCache = (): void => cache.clear();
-export const getCacheStats = () => cache.getStats(); 
+export function settlementText(state: WarikanState): string {
+  const balances = calculateMemberBalances(state.members, state.payments);
+  const transfers = calculateSettlements(balances);
+  return [
+    `${state.eventName || '割り勘'}｜精算結果`,
+    `合計 ${yen(state.payments.reduce((sum, p) => sum + p.amount, 0))} / ${state.members.length}人 / ${state.payments.length}件`,
+    '',
+    ...(transfers.length
+      ? transfers.map((s) => `${s.from} → ${s.to}：${yen(s.amount)}`)
+      : ['送金は不要です。']),
+    '',
+    '【支払いの内訳】',
+    ...state.payments.map(
+      (p) =>
+        `${p.memo || '立て替え'}：${yen(p.amount)}（${state.members.find((m) => m.id === p.payerId)?.name}が支払い / 対象：${p.participantIds.map((id) => state.members.find((m) => m.id === id)?.name).join('、')}）`,
+    ),
+    ...(state.payments.some((p) => p.needsReview)
+      ? ['', '※ 旧バージョンの記録があります。割り勘の対象者を確認してください。']
+      : []),
+    '',
+    '1円未満の端数は、支払いごとに対象者の登録順で1円ずつ配分しています。',
+    'WARICAで計算（送金は各自で行ってください）',
+  ].join('\n');
+}

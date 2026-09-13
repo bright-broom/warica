@@ -1,310 +1,84 @@
-# WARICAN - Minimalist Bill Splitting Application
+# WARICA
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/KoenigWolf/warica)
-[![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Next.js](https://img.shields.io/badge/Next.js-15.3.4-000000?logo=nextdotjs&logoColor=white)](https://nextjs.org/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-v4-38B2AC?logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
-[![React](https://img.shields.io/badge/React-19.0-61DAFB?logo=react&logoColor=white)](https://reactjs.org/)
+**楽しい時間の、そのあとに。** 旅行や食事の立て替えを記録し、誰が誰にいくら送ればよいかを計算する、日本語の割り勘アプリです。
 
-エレガントで高性能な割り勘計算アプリケーション。ハイブランドなモノトーンデザインと直感的なUXで、複雑な精算を簡単に。
+## できること
 
-**Live Demo**: [warica.vercel.app](https://warica.vercel.app)
+- イベント名とメンバーを登録・編集（2〜100人）
+- 支払いを追加・編集・削除（1件1〜1,000,000円、整数の日本円のみ）
+- 支払いごとに割り勘の対象者を選択。支払った本人を含める・外す、どちらも可能
+- 支払額、負担額、精算額と送金先を表示
+- 精算結果と支払い内訳をテキストでコピー。コピーできないブラウザでは選択可能なテキストを表示
+- ブラウザ内の自動保存、JSONバックアップのダウンロード・読み込み（2MBまで）
+- PC・スマートフォンに対応。320px幅で主要操作と横スクロールがないことを自動テスト
 
-## ✨ 主要機能
+実際の送金、共同編集、ログイン、クラウド同期は行いません。入力したデータを送るAPIや外部フォントの読み込みはありません。サイトにアクセスした際の通信・ホスティング側のアクセス記録は別です。
 
-### 🎯 **Smart Payment Splitting**
-- **メンバー選択式分割**: 支払い先を自由に選択して個別分割
-- **リアルタイム計算**: 入力と同時に一人当たり金額を表示
-- **自動最適化**: 最小送金回数で精算方法を計算
+## 起動
 
-### 🎨 **High-Brand Design**
-- **Monochrome UI**: ミニマルで洗練されたモノトーンデザイン
-- **Premium Typography**: Interフォントによる高級感のあるタイポグラフィ
-- **Mobile-First**: スマートフォン最適化レスポンシブデザイン
+Node.js 24を推奨（22以上）、pnpm 10.23.0を使用します。
 
-### ⚡ **Performance & Reliability**
-- **Type-Safe**: 完全なTypeScript実装で実行時エラーを防止
-- **Zero-Hydration**: SSR/CSR一致でhydrationエラーを完全排除
-- **Intelligent Cache**: 計算結果のキャッシュで高速化
-
-### 🔒 **Privacy-First**
-- **Complete Local Processing**: 全データがブラウザ内で処理
-- **No External APIs**: サーバーへのデータ送信なし
-- **Backup System**: 自動バックアップでデータ保護
-
-## 🚀 Quick Start
-
-### Prerequisites
-- Node.js 18+
-- pnpm (推奨) または npm
-
-### Installation
-```bash
-# Clone repository
-git clone https://github.com/KoenigWolf/warica.git
+```sh
+git clone git@github.com:bright-broom/warica.git
 cd warica
-
-# Install dependencies
-pnpm install
-
-# Start development server
+corepack enable
+pnpm install --frozen-lockfile
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+[localhost:3000](http://localhost:3000) を開いてください。環境変数やデータベースは不要です。
 
-### Available Scripts
-```bash
-pnpm dev        # Development server (with Turbopack)
-pnpm build      # Production build
-pnpm start      # Start production server
-pnpm lint       # Run ESLint
+```sh
+pnpm lint       # ESLint（警告もエラーにする）
+pnpm typecheck  # Next.jsのルート型生成とTypeScriptチェック
+pnpm test       # 計算・バリデーション・保存の単体テスト
+pnpm build      # 本番向けビルド
+pnpm check      # 上記4つをまとめて実行
+pnpm start      # ビルド済みのアプリを起動
+
+pnpm exec playwright install chromium
+pnpm test:e2e   # 本番ビルドでPCと320px幅の操作テスト（先にpnpm build）
 ```
 
-## 📱 How to Use
+GitHub ActionsはNode.js 24で静的チェック、単体テスト、ビルド、依存関係監査、ブラウザテストを実行します。
 
-### 1. **Setup Event & Members**
-- イベント名を設定
-- 参加メンバーを追加（2名以上）
-- 自動バリデーションでエラー防止
+## 計算ルール
 
-### 2. **Record Payments**
-- 支払者を選択
-- 金額と内容を入力
-- 支払い先メンバーを自由選択
-- 自動分割計算で公平な配分
+1. 1回の立て替えを1件の支払いとして保存します。対象者は名前ではなくIDで保持します。
+2. 各支払いの金額を、その支払いの対象者だけに均等配分します。
+3. 1円未満の端数は対象者の登録順に1円ずつ割り当てます。例：1,000円を3人で分けると334円・333円・333円です。
+4. 各人の「支払額 − 負担額」を求め、受け取る人と支払う人の間で差額を相殺します。
+5. 送金は最大で人数−1件にまとめます。貪欲法のため、数学的に最小の送金件数を常に保証するものではありません。
 
-### 3. **View Results**
-- 各メンバーの収支状況を確認
-- 最適化された送金リストを表示
-- ワンタップで精算完了
+例：A・B・Cのうち、AがBだけのために3,000円を立て替えた場合、BからAへ3,000円、Cの負担は0円です。AとBの2人を対象にすると、BからAへ1,500円です。
 
-## 🏗️ Architecture
+新しくメンバーを追加しても、登録済みの支払いの対象者は変わりません。支払いに含まれるメンバーは、その支払いを先に編集・削除するまで削除できません。
 
-### Tech Stack
-- **Framework**: Next.js 15.3.4 with App Router
-- **Language**: TypeScript 5 (strict mode)
-- **Styling**: Tailwind CSS v4 + Custom Design System
-- **UI Components**: Radix UI primitives + shadcn/ui
-- **State Management**: Custom React hooks with Zustand-like patterns
-- **Deployment**: Vercel with optimized build
+## 保存と復旧
 
-### Project Structure
-```
-src/
-├── app/                    # App Router pages
-│   ├── globals.css        # Global styles & design tokens
-│   ├── layout.tsx         # Root layout with metadata
-│   ├── page.tsx           # Home (event setup)
-│   ├── payments/page.tsx  # Payment recording
-│   ├── result/page.tsx    # Results display
-│   └── useWarikanStore.ts # State management
-├── components/
-│   ├── ui/                # Base UI components
-│   │   ├── button.tsx
-│   │   ├── input.tsx
-│   │   ├── checkbox.tsx
-│   │   └── ...
-│   ├── shared/            # Shared components
-│   │   ├── ErrorBoundary.tsx
-│   │   ├── LoadingSpinner.tsx
-│   │   ├── MemberInput.tsx
-│   │   └── PaymentItem.tsx
-│   ├── ActionButtons.tsx  # Navigation components
-│   ├── PageContainer.tsx  # Layout wrapper
-│   └── SectionTitle.tsx   # Typography components
-└── lib/                   # Core logic & utilities
-    ├── calculations.ts    # Advanced calculation engine
-    ├── design-system.ts   # Design system utilities
-    ├── routes.ts          # Route definitions
-    ├── shared-logic.ts    # Reusable business logic
-    ├── storage.ts         # Local storage management
-    ├── types.ts           # Type definitions
-    ├── utils.ts           # General utilities
-    └── validation.ts      # Input validation
-```
+- 1つのProviderが全画面で状態を共有し、更新時に同期的にlocalStorageへ保存します。画面移動時に500msの保存待ちをキャンセルしていた旧実装を廃止しました。
+- 保存失敗時は入力をメモリに残して警告を表示します。再試行するか、バックアップをダウンロードしてください。未保存のままタブを閉じたり再読み込みしたりするとメモリ上の変更は失われます。
+- 保存前に読んだ内容と現在の保存内容を比較します。別タブが更新していたら上書きを止めます。必要な画面のバックアップを保存したうえで再読み込みしてください。複数タブの変更を自動統合する機能はありません。
+- 前回の正常な保存データをバックアップキーに保持します。主データが壊れていたらそこから読み込み、復旧したことを表示します。バックアップの書き込みだけが失敗した場合は、主データの保存を試みます。
+- 両方を読み込めない場合、元データを消さずに編集を止めます。ブラウザのアクセス設定を確認するか、「読み込む」から保存済みのJSONバックアップを選び、置き換えを確認してください。
+- 「新しく始める」は確認後に現在のイベントを空にします。保存できなければ現在のイベントを維持します。前回の正常なイベントは内部バックアップに残るため、完全なデータ消去が必要な場合はブラウザのサイトデータを削除してください。
+- JSONファイルは暗号化されません。ブラウザのサイトデータを削除したり、別の端末・URL・ブラウザを使ったりした場合は、バックアップを読み込んでください。
 
-## ⚙️ Core Algorithms
+### 旧バージョンのデータ
 
-### 1. **Settlement Calculation**
-```typescript
-// Greedy algorithm for minimal transfers
-const settlements = calculateMinimalSettlements(balances);
-// Time complexity: O(n log n)
-// Space complexity: O(n)
-```
+既存キー `warican-app-data-v2` / `warican-backup-v2` を引き継ぎ、2.0.0形式を読み込めます。保存形式は3.0.0です。
 
-### 2. **Balance Distribution**
-- 各メンバーの収支を正確に計算
-- 端数の公平な分散アルゴリズム
-- 数値精度保証（浮動小数点エラー対策）
+旧バージョンは選択した対象者を保存せず、支払いを分割してメモに名前を埋め込んでいました。そのため、正確な対象者の自動復元はできません。旧レコードには読み込み時の全員を仮設定し、「旧データ・対象者を要確認」を表示します。支払いを編集して対象者を確認・保存すると表示が消えます。
 
-### 3. **Smart Caching**
-- 計算結果の自動キャッシュ
-- TTL(5分)とLRU方式でメモリ効率化
-- 変更時の自動無効化
+メモから対象者を推測したり、複数レコードを自動でまとめたりはしません。元の記録は個別のまま残ります。端数の配分も支払い単位になるため、旧画面の結果と差が出る場合があります。旧記録を確認してから精算してください。小数金額・不明なメンバー参照などの不正な記録は黙って修正せず、読み込みを停止します。
 
-## 🎨 Design System
+## 構成
 
-### Color Palette (Monochrome)
-```css
-/* Primary colors */
---background: 0 0% 100%;     /* Pure white */
---foreground: 0 0% 3.9%;     /* Near black */
---muted: 0 0% 96.1%;         /* Light gray */
---border: 0 0% 89.8%;        /* Border gray */
+- `src/app/`：メンバー・支払い・精算結果の3画面と共有状態
+- `src/components/`：画面枠、支払いフォーム、支払い履歴
+- `src/lib/calculations.ts`：円単位の負担配分・送金計算・共有テキスト
+- `src/lib/storage.ts`：保存、バックアップ、旧形式読み込み、インポート検証
+- `src/lib/validation.ts`：入力の制限と対象者の検証
+- `tests/`：実例と100パターンの台帳に対する金額保全・精算検証、保存異常、ブラウザ操作
 
-/* Semantic colors */
---destructive: 0 84.2% 60.2%; /* Error red */
---ring: 0 0% 3.9%;            /* Focus ring */
-```
-
-### Typography Scale
-```css
-/* High-brand typography using Inter */
---font-inter: "Inter", sans-serif;
---tracking-wide: 0.025em;
---tracking-widest: 0.1em;
-
-/* Hierarchy */
-.hero: 2.5rem / 3rem, weight: 300
-.h1: 2rem / 2.5rem, weight: 300  
-.h2: 1.5rem / 2rem, weight: 400
-.body: 1rem / 1.5rem, weight: 300
-.caption: 0.875rem / 1.25rem, weight: 400
-```
-
-### Spacing System
-```css
-/* Consistent spacing scale */
---tight: 0.5rem;
---normal: 1rem;
---loose: 1.5rem;
---element: 2rem;
-```
-
-## 🧪 Quality Assurance
-
-### Type Safety
-- 100% TypeScript coverage
-- Strict type checking enabled
-- Runtime type validation for critical paths
-
-### Error Handling
-- Comprehensive error boundaries
-- Graceful degradation strategies
-- User-friendly error messages
-
-### Performance
-- Lazy loading for optimal bundle size
-- Memoization for expensive calculations
-- Virtual scrolling for large member lists
-
-### Testing Strategy
-- Unit tests for calculation algorithms
-- Integration tests for user flows
-- E2E tests for critical paths
-
-## 🔐 Security & Privacy
-
-### Data Protection
-- **Zero external communication**: All processing happens locally
-- **No cookies or tracking**: Complete user privacy
-- **Automatic data cleanup**: Optional data clearing
-
-### Storage Security
-- Data integrity checksums
-- Automatic backup system
-- Safe storage size limits (4.5MB)
-
-### Browser Compatibility
-- Modern browser support (ES2020+)
-- Progressive enhancement
-- Fallback for storage unavailability
-
-## 📊 Performance Metrics
-
-### Bundle Analysis
-- **Initial Load**: ~50KB gzipped
-- **First Contentful Paint**: <1.5s
-- **Time to Interactive**: <2.5s
-- **Lighthouse Score**: 95+ across all metrics
-
-### Calculation Performance
-- **Basic Split (10 members)**: <1ms
-- **Complex Settlement (50 members)**: <10ms
-- **Cache Hit Rate**: >90% in typical usage
-
-## 🚀 Deployment
-
-### Vercel (Recommended)
-```bash
-# Deploy to Vercel
-vercel --prod
-```
-
-### Self-hosting
-```bash
-# Build for production
-pnpm build
-
-# Start production server
-pnpm start
-```
-
-### Environment Variables
-No environment variables required - the app runs entirely client-side.
-
-## 🤝 Contributing
-
-We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md).
-
-### Development Workflow
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/amazing-feature`
-3. Commit changes: `git commit -m 'feat: add amazing feature'`
-4. Push to branch: `git push origin feature/amazing-feature`
-5. Open a Pull Request
-
-### Code Standards
-- Follow TypeScript strict mode
-- Use conventional commits
-- Maintain 100% test coverage for new features
-- Follow the established design system
-
-## 📈 Roadmap
-
-### v1.1 (Next Release)
-- [ ] Export results to PDF/Excel
-- [ ] Currency conversion support
-- [ ] Advanced splitting rules
-- [ ] Group management features
-
-### v1.2 (Future)
-- [ ] Offline PWA support
-- [ ] Multi-language support
-- [ ] Integration with payment apps
-- [ ] Advanced analytics
-
-## 📄 License
-
-MIT License - see [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- [Radix UI](https://radix-ui.com/) for accessible components
-- [Tailwind CSS](https://tailwindcss.com/) for utility-first styling
-- [shadcn/ui](https://ui.shadcn.com/) for component patterns
-- [Vercel](https://vercel.com/) for seamless deployment
-
-## 📞 Support
-
-For questions, bug reports, or feature requests:
-- 🐛 [GitHub Issues](https://github.com/KoenigWolf/warica/issues)
-- 💬 [Discussions](https://github.com/KoenigWolf/warica/discussions)
-- 📧 Contact via GitHub profile
-
----
-
-Built with ❤️ using modern web technologies.
-
+Next.js 15.5、React 19、TypeScript 5.9、Tailwind CSS 4を使用しています。Next.jsは[公式の2026年8月セキュリティ更新](https://nextjs.org/blog/august-2026-security-release)より新しい15.5.25へ更新し、Next.jsが固定するPostCSSは互換性のある8.5.28へ上書きしています。公開前にも依存関係監査を実行してください。
