@@ -194,8 +194,12 @@ test('empty and populated screens fit the viewport with long names', async ({ pa
 test('clipboard success, deletion cancellation and stale-tab protection', async ({
   page,
   context,
+  browserName,
 }) => {
-  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  // WebKit writes from the click gesture; it only exposes a clipboard-read permission.
+  await context.grantPermissions(
+    browserName === 'webkit' ? ['clipboard-read'] : ['clipboard-read', 'clipboard-write'],
+  );
   await setup(page);
   await page.getByLabel('金額', { exact: true }).fill('3000');
   await page.getByLabel('何の支払い？').fill('ホテル');
@@ -323,9 +327,10 @@ test('all routes inherit the shared theme and keep a single persistent shell', a
 
 test('payment drafts survive route changes and continuous entry keeps payer and participants', async ({
   page,
-}, testInfo) => {
+  isMobile,
+}) => {
   await setup(page);
-  if (testInfo.project.name === 'mobile') {
+  if (isMobile) {
     await page.evaluate(() => window.scrollTo(0, 0));
     const submit = await page.getByRole('button', { name: 'この支払いを追加する' }).boundingBox();
     const dock = await page.getByRole('navigation', { name: '割り勘の手順' }).boundingBox();
@@ -369,8 +374,12 @@ test('payment drafts survive route changes and continuous entry keeps payer and 
 test('replacing an event clears drafts and individual transfers can be copied with a fallback', async ({
   page,
   context,
+  browserName,
 }) => {
-  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  // WebKit writes from the click gesture; it only exposes a clipboard-read permission.
+  await context.grantPermissions(
+    browserName === 'webkit' ? ['clipboard-read'] : ['clipboard-read', 'clipboard-write'],
+  );
   await setup(page);
   const backup = await page.evaluate((storageKey) => localStorage.getItem(storageKey)!, key);
   await page.getByLabel('金額', { exact: true }).fill('999');
