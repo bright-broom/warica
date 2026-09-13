@@ -31,12 +31,14 @@ test('complete flow: selected participants, immediate reload, edit, copy fallbac
   await expect(page).toHaveURL(/\/result$/);
   await page.reload();
   await expect(page.getByRole('heading', { name: '精算', exact: true })).toBeVisible();
-  const transfer = page.locator('.transfer-list li');
+  const transfer = page.getByTestId('transfer-list').locator('li');
   await expect(transfer).toHaveCount(1);
   await expect(transfer).toContainText('はる');
   await expect(transfer).toContainText('あおい');
   await expect(transfer).toContainText('¥3,000');
-  await expect(page.locator('.balance-row').filter({ hasText: 'りく' })).toContainText('精算不要');
+  await expect(page.getByTestId('balance-row').filter({ hasText: 'りく' })).toContainText(
+    '精算不要',
+  );
   await noOverflow(page);
 
   await page.evaluate(() =>
@@ -53,10 +55,10 @@ test('complete flow: selected participants, immediate reload, edit, copy fallbac
   await page.getByLabel('金額', { exact: true }).fill('1001');
   await page.getByRole('checkbox', { name: 'あおい', exact: true }).check();
   await page.getByRole('button', { name: '変更を保存する' }).click();
-  await expect(page.locator('.payment-list li')).toHaveCount(1);
-  await expect(page.locator('.payment-list li')).toContainText('¥1,001');
+  await expect(page.getByTestId('payment-list').locator('li')).toHaveCount(1);
+  await expect(page.getByTestId('payment-list').locator('li')).toContainText('¥1,001');
   await page.getByRole('link', { name: '精算結果を見る' }).click();
-  await expect(page.locator('.transfer-list li')).toContainText('¥500');
+  await expect(page.getByTestId('transfer-list').locator('li')).toContainText('¥500');
 
   const downloading = page.waitForEvent('download');
   await page.getByRole('button', { name: 'バックアップ', exact: true }).click();
@@ -83,7 +85,7 @@ test('validation preserves rejected input and protects members referenced by pay
   await expect(page.getByRole('button', { name: 'この支払いを追加する' })).toBeDisabled();
   await page.getByLabel('金額', { exact: true }).fill('1');
   await page.getByRole('button', { name: 'この支払いを追加する' }).click();
-  await expect(page.locator('.payment-list li')).toHaveCount(1);
+  await expect(page.getByTestId('payment-list').locator('li')).toHaveCount(1);
   await page.getByRole('link', { name: 'メンバーに戻る' }).click();
   await page.getByLabel('メンバーの名前', { exact: true }).fill('あおい');
   await page.getByRole('button', { name: '追加', exact: true }).click();
@@ -91,7 +93,7 @@ test('validation preserves rejected input and protects members referenced by pay
   await expect(page.locator('main [role=alert]')).toContainText('同じ名前');
   await page.getByRole('button', { name: 'はるを削除' }).click();
   await expect(page.locator('main [role=alert]')).toContainText('支払いに含まれる');
-  await expect(page.locator('.member-list li')).toHaveCount(3);
+  await expect(page.getByTestId('member-list').locator('li')).toHaveCount(3);
   await page.getByRole('button', { name: 'あおいの名前を編集' }).click();
   await page.getByLabel('新しい名前').fill('あおいさん');
   await page.getByRole('button', { name: '名前を保存' }).click();
@@ -129,7 +131,7 @@ test('denied saves retain input across routes, retry persists it', async ({ page
   await expect(page.locator('main [role=alert]')).toHaveCount(0);
   await page.reload();
   await expect(page.getByLabel('イベント名', { exact: true })).toHaveValue('未保存の旅行');
-  await expect(page.locator('.member-list li')).toHaveCount(2);
+  await expect(page.getByTestId('member-list').locator('li')).toHaveCount(2);
 });
 
 test('unreadable data is retained and direct result navigation does not claim settlement', async ({
@@ -156,7 +158,11 @@ test('empty and populated screens fit the viewport with long names', async ({ pa
     page.getByRole('heading', { name: 'メンバー', exact: true, level: 1 }),
   ).toBeVisible();
   await noOverflow(page);
-  await page.screenshot({ path: `artifacts/${testInfo.project.name}-home.png`, fullPage: true });
+  await page.screenshot({
+    path: `artifacts/${testInfo.project.name}-home.png`,
+    fullPage: true,
+    animations: 'disabled',
+  });
   await page.getByLabel('イベント名', { exact: true }).fill('長いイベント名'.repeat(6));
   for (const name of ['とても長い名前のメンバーあいうえお', 'VeryLongMemberNameAB']) {
     await page.getByLabel('メンバーの名前', { exact: true }).fill(name);
@@ -172,7 +178,11 @@ test('empty and populated screens fit the viewport with long names', async ({ pa
   await page.getByRole('link', { name: '精算結果を見る' }).click();
   await expect(page.getByRole('heading', { name: '精算', exact: true })).toBeVisible();
   await noOverflow(page);
-  await page.screenshot({ path: `artifacts/${testInfo.project.name}-result.png`, fullPage: true });
+  await page.screenshot({
+    path: `artifacts/${testInfo.project.name}-result.png`,
+    fullPage: true,
+    animations: 'disabled',
+  });
 });
 
 test('clipboard success, deletion cancellation and stale-tab protection', async ({
@@ -186,7 +196,7 @@ test('clipboard success, deletion cancellation and stale-tab protection', async 
   await page.getByRole('button', { name: 'この支払いを追加する' }).click();
   page.once('dialog', (dialog) => dialog.dismiss());
   await page.getByRole('button', { name: 'ホテルを削除' }).click();
-  await expect(page.locator('.payment-list li')).toHaveCount(1);
+  await expect(page.getByTestId('payment-list').locator('li')).toHaveCount(1);
   await page.getByRole('link', { name: '精算結果を見る' }).click();
   await page.getByRole('button', { name: '精算結果をコピー' }).click();
   await expect(
@@ -256,7 +266,48 @@ test('a user-confirmed backup can recover an otherwise unreadable event', async 
     buffer: Buffer.from(backup),
   });
   await expect(page.getByLabel('イベント名', { exact: true })).toHaveValue('週末の京都旅行');
-  await expect(page.locator('.member-list li')).toHaveCount(3);
+  await expect(page.getByTestId('member-list').locator('li')).toHaveCount(3);
   await page.reload();
+  await expect(page.getByLabel('イベント名', { exact: true })).toHaveValue('週末の京都旅行');
+});
+
+test('all routes inherit the shared theme and keep a single persistent shell', async ({ page }) => {
+  await setup(page);
+  await page.addStyleTag({ content: '* { transition: none !important; }' });
+  await page.getByRole('link', { name: 'メンバーに戻る' }).click();
+  await expect(page.getByTestId('app-shell')).toHaveCount(1);
+  await page
+    .getByTestId('app-shell')
+    .evaluate((shell) => shell.setAttribute('data-persisted', 'yes'));
+  const primary = page.getByRole('link', { name: '支払いを記録する', exact: true });
+  await page.mouse.move(0, 0);
+  const originalColor = await primary.evaluate(
+    (element) => getComputedStyle(element).backgroundColor,
+  );
+  await page.evaluate(() => {
+    document.documentElement.style.setProperty('--brand-accent', 'var(--brand-main)');
+  });
+  await expect
+    .poll(() => primary.evaluate((element) => getComputedStyle(element).backgroundColor))
+    .not.toBe(originalColor);
+  const inheritedColor = await primary.evaluate(
+    (element) => getComputedStyle(element).backgroundColor,
+  );
+  await primary.click();
+  await page.getByLabel('金額', { exact: true }).fill('1001');
+  const add = page.getByRole('button', { name: 'この支払いを追加する' });
+  await page.mouse.move(0, 0);
+  await expect(add).toHaveCSS('background-color', inheritedColor);
+  await add.click();
+  await page.getByRole('link', { name: '精算結果を見る' }).click();
+  await page.mouse.move(0, 0);
+  await expect(page.getByRole('button', { name: '精算結果をコピー' })).toHaveCSS(
+    'background-color',
+    inheritedColor,
+  );
+  await expect(page.getByTestId('app-shell')).toHaveAttribute('data-persisted', 'yes');
+  await expect(page.getByRole('main')).toHaveCount(1);
+  await page.getByRole('link', { name: 'WARICA ホーム' }).click();
+  await expect(page.getByTestId('app-shell')).toHaveAttribute('data-persisted', 'yes');
   await expect(page.getByLabel('イベント名', { exact: true })).toHaveValue('週末の京都旅行');
 });

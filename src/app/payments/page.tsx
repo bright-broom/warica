@@ -2,25 +2,19 @@
 import { useState } from 'react';
 import { ArrowLeft, ArrowRight, Wallet, ReceiptText } from 'lucide-react';
 import { IconAction, IconLink } from '@/components/IconAction';
-import { AppShell } from '@/components/AppShell';
+import { ActionRow, Badge, Notice, Panel } from '@/components/ui';
 import { PaymentEditor } from '@/components/PaymentEditor';
 import { PaymentHistory } from '@/components/PaymentHistory';
+import { routes } from '@/config/navigation';
 import { useWarikanStore } from '../useWarikanStore';
 import type { Payment } from '@/lib/types';
 import { yen } from '@/lib/calculations';
 
-function Payments() {
+export default function PaymentsPage() {
   const { state, total } = useWarikanStore();
   const [editing, setEditing] = useState<Payment>();
   const [formKey, setFormKey] = useState(0);
   const [message, setMessage] = useState('');
-  if (!state.eventName.trim() || state.members.length < 2)
-    return (
-      <div className="empty-state">
-        <h1>メンバー未登録</h1>
-        <IconLink label="メンバーを登録する" icon={ArrowRight} className="primary" href="/" />
-      </div>
-    );
   function complete() {
     setMessage(editing ? '支払いを更新しました。' : '支払いを追加しました。');
     setEditing(undefined);
@@ -29,21 +23,20 @@ function Payments() {
   return (
     <>
       <h1 className="sr-only">支払い</h1>
-      <div className="total-strip">
-        <div>
-          <span title="立て替え合計">
-            <Wallet size={20} aria-hidden="true" />
-            <span className="sr-only">立て替え合計</span>
-          </span>
-          <strong>{yen(total)}</strong>
+      <Panel tone="soft" className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-3" aria-label="立て替え合計">
+          <Wallet size={22} aria-hidden="true" />
+          <strong className="text-2xl font-semibold tracking-tight tabular-nums sm:text-3xl">
+            {yen(total)}
+          </strong>
         </div>
-        <span className="count-pill" aria-label={`${state.payments.length}件の支払い`}>
+        <Badge aria-label={`${state.payments.length}件の支払い`}>
           <ReceiptText size={14} aria-hidden="true" />
           {state.payments.length}
-        </span>
-      </div>
+        </Badge>
+      </Panel>
       {state.payments.some((p) => p.needsReview) && (
-        <div className="notice">旧データは全員で仮計算。対象者を確認してください。</div>
+        <Notice>旧データは全員で仮計算。対象者を確認してください。</Notice>
       )}
       <PaymentEditor
         key={`${editing?.id ?? 'new'}-${formKey}`}
@@ -63,31 +56,26 @@ function Payments() {
             ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }}
       />
-      <div className="next-action">
-        <IconLink href="/" label="メンバーに戻る" icon={ArrowLeft} />
+      <ActionRow>
+        <IconLink href={routes.members} label="メンバーに戻る" icon={ArrowLeft} />
         {state.payments.length ? (
           <IconLink
-            href="/result"
+            href={routes.result}
             label="精算結果を見る"
             icon={ArrowRight}
-            className="primary next-icon"
+            variant="primary"
+            size="large"
           />
         ) : (
           <IconAction
             label="精算結果を見る"
             icon={ArrowRight}
-            className="primary next-icon"
+            variant="primary"
+            size="large"
             disabled
           />
         )}
-      </div>
+      </ActionRow>
     </>
-  );
-}
-export default function PaymentsPage() {
-  return (
-    <AppShell>
-      <Payments />
-    </AppShell>
   );
 }

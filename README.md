@@ -75,10 +75,15 @@ GitHub ActionsはNode.js 24で静的チェック、単体テスト、ビルド�
 ## 構成
 
 - `src/app/`：メンバー・支払い・精算結果の3画面と共有状態
-- `src/components/`：画面枠、支払いフォーム、支払い履歴
+- `src/design/theme.ts`：全画面・faviconの3色パレット
+- `src/config/navigation.ts`：ページ情報と表示条件
+- `src/components/ui/`：Tailwindのテーマを使う共通部品
+- `src/components/`：最上位の画面枠、アイコン操作、支払いフォーム、支払い履歴
 - `src/lib/calculations.ts`：円単位の負担配分・送金計算・共有テキスト
 - `src/lib/storage.ts`：保存、バックアップ、旧形式読み込み、インポート検証
 - `src/lib/validation.ts`：入力の制限と対象者の検証
 - `tests/`：実例と100パターンの台帳に対する金額保全・精算検証、保存異常、ブラウザ操作
 
 Next.js 15.5、React 19、TypeScript 5.9、Tailwind CSS 4を使用しています。Next.jsは[公式の2026年8月セキュリティ更新](https://nextjs.org/blog/august-2026-security-release)より新しい15.5.25へ更新し、Next.jsが固定するPostCSSは互換性のある8.5.28へ上書きしています。公開前にも依存関係監査を実行してください。
+
+色・部品・ページ構成の変更方法は[デザイン管理ガイド](docs/DESIGN_SYSTEM.md)を参照してください。
