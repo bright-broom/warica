@@ -23,6 +23,7 @@ import {
   serializeState,
   MAX_FILE_SIZE,
   STORAGE_KEY,
+  STORAGE_CONFLICT_MESSAGE,
 } from '@/lib/storage';
 import { MAX_MEMBERS, MAX_PAYMENTS, validateMemberName, validatePayment } from '@/lib/validation';
 import {
@@ -40,8 +41,9 @@ function useStore() {
   const [isLoaded, setLoaded] = useState(false);
   const [loadBlocked, setLoadBlocked] = useState(false);
   const [storageError, setStorageError] = useState('');
+  const [storageConflict, setStorageConflict] = useState(false);
   const [notice, setNotice] = useState('');
-  // Only explicit replacement resets drafts; initial load/retry can restore them.
+  // Only explicit replacement resets drafts and page inputs; initial load/retry can restore them.
   const [eventRevision, setEventRevision] = useState(0);
 
   function load() {
@@ -51,6 +53,7 @@ function useStore() {
       stateRef.current = result.data.state;
       setState(result.data.state);
       setStorageError('');
+      setStorageConflict(false);
       setLoadBlocked(false);
       setNotice(
         result.data.recovered
@@ -68,14 +71,47 @@ function useStore() {
     load();
   }, []);
 
+  useEffect(() => {
+    if (!isLoaded || loadBlocked) return;
+    let storage: Storage;
+    try {
+      storage = window.localStorage;
+    } catch {
+      return;
+    }
+    function check() {
+      try {
+        // Read the current value: queued storage events may describe an older write.
+        if (storage.getItem(STORAGE_KEY) !== rawRef.current) {
+          setStorageConflict(true);
+          setStorageError(STORAGE_CONFLICT_MESSAGE);
+        }
+      } catch {
+        setStorageError('保存データにアクセスできません。現在の入力は保持しています。');
+      }
+    }
+    function changed(event: StorageEvent) {
+      if (event.storageArea === storage && (event.key === STORAGE_KEY || event.key === null))
+        check();
+    }
+    window.addEventListener('storage', changed);
+    window.addEventListener('focus', check);
+    return () => {
+      window.removeEventListener('storage', changed);
+      window.removeEventListener('focus', check);
+    };
+  }, [isLoaded, loadBlocked]);
+
   function persist(next: WarikanState, expectedRaw = rawRef.current): boolean {
     const result = saveToStorage(next, expectedRaw);
     if (result.ok) {
       rawRef.current = result.data;
       setStorageError('');
+      setStorageConflict(false);
       return true;
     }
     setStorageError(result.error);
+    setStorageConflict(result.code === 'conflict');
     return false;
   }
 
@@ -141,11 +177,35 @@ function useStore() {
     isLoaded,
     loadBlocked,
     storageError,
+    storageConflict,
     notice,
     balances,
     settlements,
     total: state.payments.reduce((sum, p) => sum + p.amount, 0),
     retryStorage: () => (loadBlocked ? load() : persist(stateRef.current)),
+    loadLatest(beforeReplace: () => boolean): Result<void> {
+      if (!isLoaded || loadBlocked)
+        return { ok: false, error: '保存データの読み込みを完了してください。' };
+      // Validate first, then clear the user's draft, then publish the snapshot.
+      // Never write the selected snapshot back over another tab's newer data.
+      const latest = loadFromStorage();
+      if (!latest.ok) {
+        setStorageError(latest.error);
+        return latest;
+      }
+      if (!beforeReplace())
+        return { ok: false, error: '下書きを消去できませんでした。現在の入力を保持しています。' };
+      rawRef.current = latest.data.raw;
+      stateRef.current = latest.data.state;
+      setState(latest.data.state);
+      setStorageError('');
+      setStorageConflict(false);
+      setNotice(
+        latest.data.recovered ? '直前のバックアップから復元しました。内容を確認してください。' : '',
+      );
+      setEventRevision((revision) => revision + 1);
+      return { ok: true, data: undefined };
+    },
     setEventName(name: string) {
       return commit({ ...stateRef.current, eventName: name.slice(0, 50) });
     },

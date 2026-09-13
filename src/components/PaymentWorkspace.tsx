@@ -80,6 +80,20 @@ function useWorkspace() {
     retryStorage() {
       return readBlocked.current ? restore() : persist();
     },
+    discardDrafts(): boolean {
+      // Called only after explicit confirmation. Keep memory intact if deletion fails.
+      try {
+        window.sessionStorage.removeItem(DRAFT_KEY);
+      } catch {
+        setStorageError('下書きを消去できません。現在の入力は保持しています。');
+        return false;
+      }
+      current.current = emptyWorkspace();
+      setValue(current.current);
+      readBlocked.current = false;
+      setStorageError('');
+      return true;
+    },
     updateDraft(patch: Partial<PaymentDraft>) {
       const previous = current.current;
       update(
