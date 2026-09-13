@@ -1,7 +1,8 @@
 'use client';
-import { Pencil, ReceiptText, Trash2 } from 'lucide-react';
+import { Pencil, ReceiptText, Trash2, Users, Wallet, History, TriangleAlert } from 'lucide-react';
 import { useWarikanStore } from '@/app/useWarikanStore';
-import { Avatar } from './AppShell';
+import { Avatar, Badge, EmptyState, Panel, SectionHeader } from './ui';
+import { IconAction } from './IconAction';
 import type { Payment } from '@/lib/types';
 import { yen } from '@/lib/calculations';
 
@@ -11,54 +12,68 @@ export function PaymentHistory({ onEdit }: { onEdit?: (payment: Payment) => void
     removePayment,
   } = useWarikanStore();
   return (
-    <section className="panel">
-      <div className="section-heading">
-        <h2>支払いの記録</h2>
-        <span className="count-pill">{payments.length}件</span>
-      </div>
+    <Panel>
+      <SectionHeader icon={History} title="支払いの記録">
+        <Badge>{payments.length}件</Badge>
+      </SectionHeader>
       {payments.length ? (
-        <ul className="payment-list">
-          {[...payments].reverse().map((p) => {
-            const index = members.findIndex((m) => m.id === p.payerId);
+        <ul data-testid="payment-list" className="divide-y divide-main/10">
+          {[...payments].reverse().map((payment) => {
+            const payer = members.find((m) => m.id === payment.payerId);
             return (
-              <li key={p.id}>
-                <Avatar name={members[index]?.name ?? '?'} index={index} />
-                <div className="payment-details">
-                  <h3>{p.memo || '立て替え'}</h3>
-                  <p>{members[index]?.name}が支払い</p>
-                  <p className="payment-participants">
-                    対象：
-                    {p.participantIds
-                      .map((id) => members.find((m) => m.id === id)?.name)
-                      .join('、')}
+              <li
+                key={payment.id}
+                className="grid min-w-0 grid-cols-[2.25rem_minmax(0,1fr)] items-start gap-3 py-5 first:pt-0 last:pb-0 sm:grid-cols-[2.25rem_minmax(0,1fr)_auto]"
+              >
+                <Avatar name={payer?.name ?? '?'} />
+                <div className="min-w-0 space-y-2 text-xs text-main/65 wrap-anywhere">
+                  <h3 className="text-sm font-semibold text-main">{payment.memo || '立て替え'}</h3>
+                  <p className="flex items-start gap-2">
+                    <Wallet size={13} className="mt-0.5" aria-hidden="true" />
+                    <span>
+                      <span className="sr-only">支払者：</span>
+                      {payer?.name}
+                    </span>
                   </p>
-                  {p.needsReview && <span className="review-badge">旧データ・対象者を要確認</span>}
+                  <p className="flex items-start gap-2">
+                    <Users size={13} className="mt-0.5" aria-hidden="true" />
+                    <span>
+                      <span className="sr-only">対象：</span>
+                      {payment.participantIds
+                        .map((id) => members.find((m) => m.id === id)?.name)
+                        .join('、')}
+                    </span>
+                  </p>
+                  {payment.needsReview && (
+                    <span className="inline-flex" title="旧データ・対象者を要確認">
+                      <TriangleAlert size={14} aria-hidden="true" />
+                      <span className="sr-only">旧データ・対象者を要確認</span>
+                    </span>
+                  )}
                 </div>
-                <div className="payment-right">
-                  <strong>{yen(p.amount)}</strong>
+                <div className="col-start-2 flex flex-wrap items-center justify-between gap-2 sm:col-start-3 sm:flex-col sm:items-end">
+                  <strong className="text-lg font-semibold tabular-nums">
+                    {yen(payment.amount)}
+                  </strong>
                   {onEdit && (
-                    <div className="payment-tools">
-                      <button
-                        className="icon-button"
-                        aria-label={`${p.memo || '立て替え'}を編集`}
-                        onClick={() => onEdit(p)}
-                      >
-                        <Pencil size={15} />
-                      </button>
-                      <button
-                        className="icon-button"
-                        aria-label={`${p.memo || '立て替え'}を削除`}
+                    <div className="flex">
+                      <IconAction
+                        label={`${payment.memo || '立て替え'}を編集`}
+                        icon={Pencil}
+                        onClick={() => onEdit(payment)}
+                      />
+                      <IconAction
+                        label={`${payment.memo || '立て替え'}を削除`}
+                        icon={Trash2}
                         onClick={() => {
                           if (
                             window.confirm(
-                              `「${p.memo || '立て替え'}」${yen(p.amount)}を削除しますか？`,
+                              `「${payment.memo || '立て替え'}」${yen(payment.amount)}を削除しますか？`,
                             )
                           )
-                            removePayment(p.id);
+                            removePayment(payment.id);
                         }}
-                      >
-                        <Trash2 size={15} />
-                      </button>
+                      />
                     </div>
                   )}
                 </div>
@@ -67,16 +82,10 @@ export function PaymentHistory({ onEdit }: { onEdit?: (payment: Payment) => void
           })}
         </ul>
       ) : (
-        <div className="empty-state compact">
-          <ReceiptText size={32} />
-          <h3>最初の支払いを記録しよう</h3>
-          <p>
-            立て替えた人と金額を入力すると、
-            <br />
-            ここに支払いがまとまります。
-          </p>
-        </div>
+        <EmptyState icon={ReceiptText}>
+          <h3 className="sr-only">支払いはありません</h3>
+        </EmptyState>
       )}
-    </section>
+    </Panel>
   );
 }

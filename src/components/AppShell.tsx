@@ -5,23 +5,21 @@ import { useRef, useState, type ReactNode } from 'react';
 import {
   ArrowDownToLine,
   ArrowUpFromLine,
-  Check,
   CheckCheck,
   RotateCcw,
   ShieldCheck,
   Split,
+  Users,
+  Wallet,
+  LoaderCircle,
+  ArrowRight,
 } from 'lucide-react';
+import { IconAction, IconLink } from './IconAction';
+import { Avatar, EmptyState, Notice, cx } from './ui';
+import { navigation, routes } from '@/config/navigation';
 import { useWarikanStore } from '@/app/useWarikanStore';
 import { MAX_FILE_SIZE, parseState, serializeState } from '@/lib/storage';
 import { yen } from '@/lib/calculations';
-
-export function Avatar({ name, index = 0 }: { name: string; index?: number }) {
-  return (
-    <span aria-hidden="true" className={`avatar avatar-${index % 5}`}>
-      {Array.from(name)[0] || '?'}
-    </span>
-  );
-}
 
 export function AppShell({ children }: { children: ReactNode }) {
   const path = usePathname(),
@@ -30,17 +28,13 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { state, isLoaded, loadBlocked, storageError, notice, total } = store;
   const inputRef = useRef<HTMLInputElement>(null);
   const [message, setMessage] = useState('');
-  const setupReady = !!state.eventName.trim() && state.members.length >= 2;
-  const steps = [
-    { href: '/', label: 'メンバー', ready: true },
-    { href: '/payments', label: '支払い', ready: setupReady },
-    { href: '/result', label: '精算結果', ready: setupReady && state.payments.length > 0 },
-  ];
-  const active = Math.max(
-    0,
-    steps.findIndex((s) => s.href === path),
-  );
-
+  const steps = navigation(state);
+  const current = steps.find((step) => step.href === path);
+  const saveLabel = !isLoaded
+    ? '読み込み中'
+    : storageError
+      ? '未保存・要確認'
+      : 'このブラウザに保存';
   function download() {
     const url = URL.createObjectURL(
       new Blob([serializeState(state)], { type: 'application/json' }),
@@ -74,7 +68,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         return;
       const result = store.importBackup(raw);
       setMessage(result.ok ? 'バックアップを読み込みました。' : result.error);
-      if (result.ok) router.push('/');
+      if (result.ok) router.push(routes.members);
     } catch {
       setMessage('ファイルを読み込めませんでした。もう一度選択してください。');
     } finally {
@@ -91,139 +85,170 @@ export function AppShell({ children }: { children: ReactNode }) {
       return;
     const result = store.resetAll();
     if (result.ok) {
-      router.push('/');
+      router.push(routes.members);
       setMessage('');
     } else setMessage(result.error);
   }
 
   return (
-    <div className="app-shell">
-      <a className="skip-link" href="#main">
+    <div className="mx-auto min-h-dvh max-w-6xl px-4 sm:px-8 lg:px-12" data-testid="app-shell">
+      <a
+        className="sr-only z-50 rounded-control bg-accent p-4 focus:not-sr-only focus:fixed focus:top-4"
+        href="#main"
+      >
         本文へ移動
       </a>
-      <header className="site-header">
-        <Link href="/" className="brand" aria-label="WARICA ホーム">
-          <span className="brand-mark">
-            <Split size={20} strokeWidth={2.5} />
+      <header className="flex h-24 items-center justify-between sm:h-32">
+        <Link
+          href={routes.members}
+          className="flex items-center gap-3 text-3xl font-bold tracking-tight"
+          aria-label="WARICA ホーム"
+        >
+          <span className="flex size-10 items-center justify-center rounded-control bg-accent">
+            <Split size={22} strokeWidth={2.5} aria-hidden="true" />
           </span>
-          warica<span className="brand-dot">.</span>
+          <span>
+            warica<span className="text-main/40">.</span>
+          </span>
         </Link>
-        <span className={`save-status ${storageError ? 'has-error' : ''}`} role="status">
-          {storageError ? <RotateCcw size={14} /> : <CheckCheck size={15} />}
-          {!isLoaded ? '読み込み中' : storageError ? '未保存・要確認' : 'このブラウザに保存'}
+        <span
+          className="flex size-control items-center justify-center text-main/60"
+          role="status"
+          title={saveLabel}
+        >
+          {!isLoaded ? (
+            <LoaderCircle size={20} className="motion-safe:animate-spin" aria-hidden="true" />
+          ) : storageError ? (
+            <RotateCcw size={20} aria-hidden="true" />
+          ) : (
+            <CheckCheck size={20} aria-hidden="true" />
+          )}
+          <span className="sr-only">{saveLabel}</span>
         </span>
       </header>
-      <div className="workspace">
-        <aside className="sidebar">
-          <div className="sidebar-top">
-            <p className="eyebrow">SPLIT WELL. STAY CLOSE.</p>
-            <p className="sidebar-heading">
-              楽しい時間を、
-              <br />
-              気持ちよく締めよう。
-            </p>
-          </div>
-          <nav aria-label="割り勘の手順">
-            <ol className="steps">
-              {steps.map((step, i) => (
-                <li key={step.href} className={active === i ? 'active' : ''}>
-                  {step.ready && isLoaded && !loadBlocked ? (
-                    <Link href={step.href} aria-current={active === i ? 'step' : undefined}>
-                      <span className="step-number">
-                        {i < active ? <Check size={16} /> : `0${i + 1}`}
-                      </span>
-                      <span>{step.label}</span>
-                      <span className="step-dot" />
-                    </Link>
-                  ) : (
-                    <span className="step-disabled">
-                      <span className="step-number">0{i + 1}</span>
-                      {step.label}
-                    </span>
-                  )}
-                </li>
-              ))}
+      <div className="grid items-start gap-6 lg:grid-cols-[12rem_minmax(0,1fr)] lg:gap-12">
+        <aside className="min-w-0 lg:sticky lg:top-8">
+          <nav aria-label="割り勘の手順" className="rounded-panel border border-main/10 p-2">
+            <ol className="grid grid-cols-3 gap-2">
+              {steps.map((step) => {
+                const active = path === step.href;
+                const style = cx(
+                  'flex h-14 w-full items-center justify-center rounded-control transition-colors',
+                  active ? 'bg-accent text-main' : 'text-main/55 hover:bg-main/5',
+                );
+                return (
+                  <li key={step.href}>
+                    {step.ready && isLoaded && !loadBlocked ? (
+                      <Link
+                        href={step.href}
+                        className={style}
+                        aria-label={step.label}
+                        title={step.label}
+                        aria-current={active ? 'step' : undefined}
+                      >
+                        <step.icon size={22} aria-hidden="true" />
+                      </Link>
+                    ) : (
+                      <button
+                        className={cx(style, 'disabled:cursor-not-allowed disabled:opacity-30')}
+                        aria-label={step.label}
+                        title={step.label}
+                        disabled
+                      >
+                        <step.icon size={22} aria-hidden="true" />
+                      </button>
+                    )}
+                  </li>
+                );
+              })}
             </ol>
           </nav>
-          <div className="event-summary">
-            <span className="eyebrow">YOUR EVENT</span>
-            <h2>{state.eventName || '新しい集まり'}</h2>
-            <div className="avatar-stack">
-              {state.members.slice(0, 5).map((m, i) => (
-                <Avatar key={m.id} name={m.name} index={i} />
+          <div className="mt-8 hidden space-y-6 px-2 lg:block">
+            {state.eventName && (
+              <h2 className="text-sm font-semibold leading-6 wrap-anywhere">{state.eventName}</h2>
+            )}
+            <div className="flex -space-x-2">
+              {state.members.slice(0, 5).map((member) => (
+                <Avatar key={member.id} name={member.name} />
               ))}
-              {!state.members.length && (
-                <span className="small muted">メンバーを追加してスタート</span>
-              )}
             </div>
-            <dl>
-              <div>
-                <dt>メンバー</dt>
+            <dl className="space-y-4 text-sm tabular-nums">
+              <div className="flex items-center justify-between gap-2">
+                <dt title="メンバー">
+                  <Users size={17} aria-hidden="true" />
+                  <span className="sr-only">メンバー</span>
+                </dt>
                 <dd>
                   {state.members.length}
-                  <span>人</span>
+                  <span className="ml-1 text-xs text-main/60">人</span>
                 </dd>
               </div>
-              <div>
-                <dt>立て替え合計</dt>
-                <dd>{yen(total)}</dd>
+              <div className="flex items-center justify-between gap-2">
+                <dt title="立て替え合計">
+                  <Wallet size={17} aria-hidden="true" />
+                  <span className="sr-only">立て替え合計</span>
+                </dt>
+                <dd className="font-semibold">{yen(total)}</dd>
               </div>
             </dl>
           </div>
-          <div className="privacy-note">
-            <ShieldCheck size={18} />
-            <p>
-              アカウント登録は不要。
-              <br />
-              入力内容はブラウザ内に保存されます。
-            </p>
-          </div>
         </aside>
-        <main id="main" className="main-content">
+        <main id="main" className="min-w-0 space-y-5 pb-8 sm:space-y-6">
           {storageError && (
-            <div className="notice error" role="alert">
+            <Notice alert>
               <p>{storageError}</p>
-              <button className="button small-button secondary" onClick={store.retryStorage}>
-                保存を再試行
-              </button>
-            </div>
+              <IconAction
+                label="保存を再試行"
+                icon={RotateCcw}
+                variant="secondary"
+                onClick={store.retryStorage}
+              />
+            </Notice>
           )}
-          {notice && (
-            <div className="notice" role="status">
-              {notice}
-            </div>
-          )}
+          {notice && <Notice>{notice}</Notice>}
           {!isLoaded ? (
-            <div className="loading" role="status">
-              イベントを読み込んでいます…
+            <div className="flex justify-center py-20" role="status">
+              <LoaderCircle size={24} className="motion-safe:animate-spin" aria-hidden="true" />
+              <span className="sr-only">読み込み中</span>
             </div>
           ) : loadBlocked ? (
-            <div className="empty-state">
-              <ShieldCheck size={36} />
+            <EmptyState icon={ShieldCheck}>
               <h1>保存データを確認してください</h1>
-              <p>
-                データへのアクセスが戻るまで、入力を停止しています。
-                <br />
-                ブラウザの設定を確認して再試行するか、下の「読み込む」からバックアップを復元してください。
-              </p>
-            </div>
+              <p>再試行するか、バックアップを読み込んでください。</p>
+            </EmptyState>
+          ) : current && !current.ready && current.blockedTitle ? (
+            <EmptyState icon={current.icon}>
+              <h1>{current.blockedTitle}</h1>
+              <IconLink
+                label={current.recoveryLabel}
+                href={current.recoveryHref}
+                icon={ArrowRight}
+                variant="primary"
+              />
+            </EmptyState>
           ) : (
             children
           )}
-          <footer className="workspace-footer">
-            <div className="footer-tools">
-              <button onClick={download} disabled={!isLoaded || loadBlocked}>
-                <ArrowDownToLine size={15} />
-                バックアップ
-              </button>
-              <button onClick={() => inputRef.current?.click()} disabled={!isLoaded}>
-                <ArrowUpFromLine size={15} />
-                読み込む
-              </button>
-              <button onClick={reset} disabled={!isLoaded || loadBlocked}>
-                <RotateCcw size={14} />
-                新しく始める
-              </button>
+          <footer className="border-t border-main/10 pt-5">
+            <div className="flex justify-center gap-2">
+              <IconAction
+                label="バックアップ"
+                icon={ArrowDownToLine}
+                onClick={download}
+                disabled={!isLoaded || loadBlocked}
+              />
+              <IconAction
+                label="読み込む"
+                icon={ArrowUpFromLine}
+                onClick={() => inputRef.current?.click()}
+                disabled={!isLoaded}
+              />
+              <IconAction
+                label="新しく始める"
+                icon={RotateCcw}
+                onClick={reset}
+                disabled={!isLoaded || loadBlocked}
+              />
             </div>
             <input
               ref={inputRef}
@@ -233,10 +258,12 @@ export function AppShell({ children }: { children: ReactNode }) {
               className="sr-only"
               onChange={(e) => void importFile(e.target.files?.[0])}
             />
-            <p className="footer-message" role="status">
+            <p
+              className="mt-2 text-center text-xs leading-6 text-main/70 wrap-anywhere"
+              role="status"
+            >
               {message}
             </p>
-            <span className="footer-signature">LESS MATH, MORE MEMORIES.</span>
           </footer>
         </main>
       </div>
