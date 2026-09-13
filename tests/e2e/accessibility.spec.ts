@@ -3,6 +3,7 @@ import { expect, test } from '@playwright/test';
 
 test('all pages and confirmation expose accessible names and readable text', async ({
   page,
+  context,
 }, testInfo) => {
   const scan = async (name: string) => {
     // Inspect the settled UI, rather than sampling toast/dialog fade transitions.
@@ -64,6 +65,21 @@ test('all pages and confirmation expose accessible names and readable text', asy
   await page.getByRole('link', { name: '精算結果を見る' }).click();
   await expect(page.getByTestId('transfer-list')).toBeVisible();
   await scan('result');
+  const other = await context.newPage();
+  await other.goto('/');
+  await other.getByLabel('イベント名', { exact: true }).fill('別タブの更新');
+  await expect(
+    page.getByRole('button', { name: '最新の保存データを読み込む', exact: true }),
+  ).toBeVisible();
+  await scan('storage-conflict');
+  await page.getByRole('button', { name: '最新の保存データを読み込む', exact: true }).click();
+  await expect(page.getByRole('alertdialog')).toBeVisible();
+  await scan('conflict-confirmation');
+  await page
+    .getByRole('alertdialog')
+    .getByRole('button', { name: 'キャンセル', exact: true })
+    .click();
+  await other.close();
   await page.getByRole('button', { name: 'メニュー' }).click();
   await scan('menu');
   await page.getByRole('menuitem', { name: '新しく始める' }).click();

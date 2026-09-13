@@ -26,9 +26,10 @@ export function validatePayment(
   if (!ids.has(input.payerId)) return { ok: false, error: '支払った人を選択してください。' };
   if (!validateAmount(input.amount))
     return { ok: false, error: '金額は1〜1,000,000円の整数で入力してください。' };
+  const participantIds = new Set(input.participantIds);
   if (
-    !input.participantIds.length ||
-    new Set(input.participantIds).size !== input.participantIds.length ||
+    !participantIds.size ||
+    participantIds.size !== input.participantIds.length ||
     input.participantIds.some((id) => !ids.has(id))
   ) {
     return { ok: false, error: '割り勘に含める人を1人以上選択してください。' };
@@ -40,7 +41,7 @@ export function validatePayment(
     data: {
       ...input,
       memo: input.memo.trim(),
-      participantIds: members.filter((m) => input.participantIds.includes(m.id)).map((m) => m.id),
+      participantIds: members.filter((m) => participantIds.has(m.id)).map((m) => m.id),
     },
   };
 }

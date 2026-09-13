@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react';
 import {
   ArrowDownToLine,
   ArrowUpFromLine,
@@ -41,18 +41,18 @@ export function AppShell({ children }: { children: ReactNode }) {
   const store = useWarikanStore();
   const confirm = useConfirmation();
   const workspace = usePaymentWorkspace();
-  const { state, isLoaded, loadBlocked, storageError, notice, total } = store;
+  const { state, isLoaded, loadBlocked, storageError, storageConflict, notice, total } = store;
   const inputRef = useRef<HTMLInputElement>(null);
   const [message, setMessage] = useState('');
   const allowReload = useRef(false);
   const menuTrigger = useRef<HTMLButtonElement>(null);
-  const pendingReset = useRef(false);
+  const pendingAction = useRef<'reset' | 'refresh' | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const steps = navigation(state);
   const current = steps.find((step) => step.href === path);
   useEffect(() => {
     mainRef.current?.scrollTo({ top: 0 });
-  }, [path]);
+  }, [path, store.eventRevision]);
   const saveLabel = !isLoaded
     ? '読み込み中'
     : storageError || workspace.storageError
@@ -73,7 +73,26 @@ export function AppShell({ children }: { children: ReactNode }) {
     store.retryStorage();
     workspace.retryStorage();
   }
-  function refresh() {
+  async function loadLatest() {
+    if (
+      !(await confirm({
+        title: '最新の保存データ',
+        description:
+          'この画面の未保存変更と下書きを破棄して、最新の保存内容を読み込みます。必要なら先にバックアップしてください。',
+        action: '最新を読み込む',
+        icon: RefreshCw,
+      }))
+    )
+      return;
+    const result = store.loadLatest(workspace.discardDrafts);
+    setMessage(result.ok ? '' : result.error);
+    if (result.ok) router.push(routes.members);
+  }
+  async function refresh() {
+    if (storageConflict) {
+      await loadLatest();
+      return;
+    }
     const saved = store.retryStorage();
     const draftSaved = workspace.retryStorage();
     if (saved && draftSaved) {
@@ -198,21 +217,28 @@ export function AppShell({ children }: { children: ReactNode }) {
             <DropdownMenuContent
               align="end"
               onCloseAutoFocus={(event) => {
-                if (!pendingReset.current) return;
+                const action = pendingAction.current;
+                if (!action) return;
                 event.preventDefault();
-                pendingReset.current = false;
+                pendingAction.current = null;
                 menuTrigger.current?.focus();
-                void reset();
+                if (action === 'reset') void reset();
+                else void refresh();
               }}
             >
-              <DropdownMenuItem disabled={!isLoaded || loadBlocked} onSelect={refresh}>
+              <DropdownMenuItem
+                disabled={!isLoaded || loadBlocked}
+                onSelect={() => {
+                  pendingAction.current = 'refresh';
+                }}
+              >
                 <RefreshCw aria-hidden="true" />
                 リフレッシュ
               </DropdownMenuItem>
               <DropdownMenuItem
                 disabled={!isLoaded || loadBlocked}
                 onSelect={() => {
-                  pendingReset.current = true;
+                  pendingAction.current = 'reset';
                 }}
               >
                 <CirclePlus aria-hidden="true" />
@@ -308,6 +334,14 @@ export function AppShell({ children }: { children: ReactNode }) {
               {storageError && <p>{storageError}</p>}
               {workspace.storageError && <p>{workspace.storageError}</p>}
               <div className="ml-auto flex max-w-[6.5rem] flex-wrap justify-end gap-2 sm:max-w-none">
+                {storageConflict && (
+                  <IconAction
+                    label="最新の保存データを読み込む"
+                    icon={RefreshCw}
+                    variant="primary"
+                    onClick={() => void loadLatest()}
+                  />
+                )}
                 <IconAction
                   label="保存を再試行"
                   icon={RotateCcw}
@@ -357,7 +391,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               />
             </EmptyState>
           ) : (
-            children
+            <Fragment key={store.eventRevision}>{children}</Fragment>
           )}
           <Input
             ref={inputRef}

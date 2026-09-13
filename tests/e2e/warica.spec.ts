@@ -634,3 +634,276 @@ test('mobile actions stay in the right half with usable touch targets', async ({
     .getByRole('button', { name: 'キャンセル', exact: true })
     .click();
 });
+
+for (const failure of ['quota', 'stale'] as const) {
+  test(`failed backup replacement preserves the current event and draft (${failure})`, async ({
+    page,
+    context,
+  }) => {
+    await setup(page);
+    const imported = await page.evaluate((storageKey) => localStorage.getItem(storageKey)!, key);
+    await page.getByRole('link', { name: 'メンバー', exact: true }).click();
+    await page.getByLabel('イベント名', { exact: true }).fill('現在のイベント');
+    await page.getByRole('link', { name: '支払い', exact: true }).click();
+    await page.getByLabel('金額', { exact: true }).fill('3000');
+    await page.getByLabel('何の支払い？').fill('登録済み');
+    await page.getByRole('button', { name: 'この支払いを追加する' }).click();
+    await expect(page.getByTestId('payment-list').locator('li')).toHaveCount(1);
+    await page.getByLabel('金額', { exact: true }).fill('777');
+    await page.getByLabel('何の支払い？').fill('入力途中');
+    const draft = await page.evaluate(() => sessionStorage.getItem('warica-payment-draft-v1'));
+    const saved = await page.evaluate((storageKey) => localStorage.getItem(storageKey)!, key);
+    let latest = saved;
+    if (failure === 'quota') await denyLocalWrites(page);
+    else {
+      const other = await context.newPage();
+      await other.goto('/');
+      await other.getByLabel('イベント名', { exact: true }).fill('別タブの更新');
+      latest = await other.evaluate((storageKey) => localStorage.getItem(storageKey)!, key);
+      await other.close();
+    }
+    await page.getByLabel('バックアップファイル').setInputFiles({
+      name: 'backup.json',
+      mimeType: 'application/json',
+      buffer: Buffer.from(imported),
+    });
+    await page
+      .getByRole('alertdialog')
+      .getByRole('button', { name: '読み込む', exact: true })
+      .click();
+    await expect(page.locator('main [role=alert]')).toContainText(
+      failure === 'quota' ? '保存できません' : '別の画面',
+    );
+    await expect(page).toHaveURL(/\/payments$/);
+    await expect(page.getByLabel('金額', { exact: true })).toHaveValue('777');
+    await expect(page.getByLabel('何の支払い？')).toHaveValue('入力途中');
+    await expect(page.getByTestId('payment-list').locator('li')).toContainText('登録済み');
+    expect(await page.evaluate(() => sessionStorage.getItem('warica-payment-draft-v1'))).toBe(
+      draft,
+    );
+    expect(await page.evaluate((storageKey) => localStorage.getItem(storageKey), key)).toBe(latest);
+    await expect(page.getByText('バックアップを読み込みました。', { exact: true })).toHaveCount(0);
+    await page.getByRole('link', { name: 'メンバー', exact: true }).click();
+    await expect(page.getByLabel('イベント名', { exact: true })).toHaveValue('現在のイベント');
+    if (failure === 'quota') {
+      await page.evaluate(() =>
+        (window as unknown as { __restoreWrites: () => void }).__restoreWrites(),
+      );
+      await page.getByRole('button', { name: '保存を再試行' }).click();
+      await page.reload();
+      await expect(page.getByLabel('イベント名', { exact: true })).toHaveValue('現在のイベント');
+      await page.getByRole('link', { name: '支払い', exact: true }).click();
+      await expect(page.getByLabel('金額', { exact: true })).toHaveValue('777');
+      await page.getByLabel('バックアップファイル').setInputFiles({
+        name: 'backup.json',
+        mimeType: 'application/json',
+        buffer: Buffer.from(imported),
+      });
+      await page
+        .getByRole('alertdialog')
+        .getByRole('button', { name: '読み込む', exact: true })
+        .click();
+      await expect(page.getByLabel('イベント名', { exact: true })).toHaveValue('週末の京都旅行');
+      await page.reload();
+      await page.getByRole('link', { name: '支払い', exact: true }).click();
+      await expect(page.getByLabel('金額', { exact: true })).toHaveValue('');
+      await expect(page.getByTestId('payment-list')).toHaveCount(0);
+    }
+  });
+}
+
+test('backup recovery invalidates old drafts even when session storage cannot be cleared', async ({
+  page,
+}) => {
+  await page.clock.setFixedTime(new Date('2026-09-13T00:00:00.000Z'));
+  await setup(page);
+  const backup = await page.evaluate((storageKey) => localStorage.getItem(storageKey)!, key);
+  await page.getByLabel('金額', { exact: true }).fill('999');
+  const oldDraft = await page.evaluate(() => sessionStorage.getItem('warica-payment-draft-v1'));
+  await page.evaluate((storageKey) => {
+    localStorage.setItem(storageKey, '{broken');
+    localStorage.setItem('warican-backup-v2', '{broken too');
+  }, key);
+  await page.reload();
+  await expect(page.getByRole('heading', { name: '保存データを確認してください' })).toBeVisible();
+  await page.evaluate(() => {
+    const original = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (key, value) {
+      if (this === window.sessionStorage) throw new DOMException('Quota', 'QuotaExceededError');
+      original.call(this, key, value);
+    };
+  });
+  await page.getByLabel('バックアップファイル').setInputFiles({
+    name: 'backup.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(backup),
+  });
+  await page
+    .getByRole('alertdialog')
+    .getByRole('button', { name: '読み込む', exact: true })
+    .click();
+  await expect(page.getByLabel('イベント名', { exact: true })).toHaveValue('週末の京都旅行');
+  await expect(page.locator('main [role=alert]')).toContainText('下書きを保存できません');
+  expect(await page.evaluate(() => sessionStorage.getItem('warica-payment-draft-v1'))).toBe(
+    oldDraft,
+  );
+  const restoredStamp = await page.evaluate(
+    (storageKey) => JSON.parse(localStorage.getItem(storageKey)!).data.lastUpdated,
+    key,
+  );
+  expect(restoredStamp).not.toBe(JSON.parse(backup).data.lastUpdated);
+  page.once('dialog', (dialog) => dialog.accept());
+  await page.reload();
+  await page.getByRole('link', { name: '支払い', exact: true }).click();
+  await expect(page.getByLabel('金額', { exact: true })).toHaveValue('');
+  await expect(page.locator('main [role=alert]')).toHaveCount(0);
+});
+
+test('a failed reset keeps the event and both new and editing drafts', async ({ page }) => {
+  await setup(page);
+  await page.getByLabel('金額', { exact: true }).fill('3000');
+  await page.getByLabel('何の支払い？').fill('ランチ');
+  await page.getByRole('button', { name: 'この支払いを追加する' }).click();
+  await page.getByLabel('金額', { exact: true }).fill('777');
+  await page.getByRole('button', { name: 'ランチを編集' }).click();
+  await page.getByLabel('金額', { exact: true }).fill('1234');
+  const saved = await page.evaluate((storageKey) => localStorage.getItem(storageKey), key);
+  const draft = await page.evaluate(() => sessionStorage.getItem('warica-payment-draft-v1'));
+  await denyLocalWrites(page);
+  await menu(page, '新しく始める');
+  await page
+    .getByRole('alertdialog')
+    .getByRole('button', { name: '新しく始める', exact: true })
+    .click();
+  await expect(page.locator('main [role=alert]')).toContainText('保存できません');
+  await expect(page).toHaveURL(/\/payments$/);
+  await expect(page.getByLabel('金額', { exact: true })).toHaveValue('1234');
+  await expect(page.getByTestId('payment-list').locator('li')).toContainText('¥3,000');
+  expect(await page.evaluate((storageKey) => localStorage.getItem(storageKey), key)).toBe(saved);
+  expect(await page.evaluate(() => sessionStorage.getItem('warica-payment-draft-v1'))).toBe(draft);
+  await page.getByRole('button', { name: '編集をキャンセル', exact: true }).click();
+  await expect(page.getByLabel('金額', { exact: true })).toHaveValue('777');
+});
+
+test('a storage conflict can be cancelled or resolved using the latest saved event without writing over it', async ({
+  page,
+  context,
+}) => {
+  await setup(page);
+  await page.getByLabel('金額', { exact: true }).fill('777');
+  await page.getByLabel('何の支払い？').fill('このタブの下書き');
+  const other = await context.newPage();
+  await other.goto('/');
+  await other.getByLabel('イベント名', { exact: true }).fill('別タブのイベント');
+  await page.getByRole('link', { name: 'メンバー', exact: true }).click();
+  await page.getByLabel('イベント名', { exact: true }).fill('このタブの未保存変更');
+  await page.getByRole('link', { name: '支払い', exact: true }).click();
+  const draft = await page.evaluate(() => sessionStorage.getItem('warica-payment-draft-v1'));
+  await expect(page.locator('main [role=alert]')).toContainText('別の画面');
+  await menu(page, 'リフレッシュ');
+  const dialog = page.getByRole('alertdialog');
+  await expect(dialog).toContainText('最新の保存データ');
+  await dialog.getByRole('button', { name: 'キャンセル', exact: true }).click();
+  await expect(page.getByLabel('金額', { exact: true })).toHaveValue('777');
+  expect(await page.evaluate(() => sessionStorage.getItem('warica-payment-draft-v1'))).toBe(draft);
+  await page.getByRole('button', { name: '最新の保存データを読み込む', exact: true }).click();
+  // Re-read after confirmation, not when the confirmation was opened.
+  await other.getByLabel('イベント名', { exact: true }).fill('確認中の最新更新');
+  const latest = await other.evaluate((storageKey) => localStorage.getItem(storageKey), key);
+  await denyLocalWrites(page);
+  await dialog.getByRole('button', { name: '最新を読み込む', exact: true }).click();
+  await expect(page.getByLabel('イベント名', { exact: true })).toHaveValue('確認中の最新更新');
+  expect(await page.evaluate((storageKey) => localStorage.getItem(storageKey), key)).toBe(latest);
+  await expect(page.locator('main [role=alert]')).toHaveCount(0);
+  await page.getByRole('link', { name: '支払い', exact: true }).click();
+  await expect(page.getByLabel('金額', { exact: true })).toHaveValue('');
+  await page.reload();
+  await expect(page.getByLabel('金額', { exact: true })).toHaveValue('');
+  await other.close();
+});
+
+for (const failure of ['unreadable', 'draft-deletion'] as const) {
+  test(`conflict recovery keeps local input when preparation fails (${failure})`, async ({
+    page,
+    context,
+  }) => {
+    await setup(page);
+    await page.getByLabel('金額', { exact: true }).fill('888');
+    const draft = await page.evaluate(() => sessionStorage.getItem('warica-payment-draft-v1'));
+    const other = await context.newPage();
+    await other.goto('/');
+    await other.getByLabel('イベント名', { exact: true }).fill('保存済みの最新イベント');
+    // Detect another tab without requiring a local edit or a failed save first.
+    await expect(page.locator('main [role=alert]')).toContainText('別の画面');
+    await expect(page.getByLabel('金額', { exact: true })).toHaveValue('888');
+    const latest = await other.evaluate((storageKey) => localStorage.getItem(storageKey), key);
+    await page.evaluate((mode) => {
+      const get = Storage.prototype.getItem;
+      const remove = Storage.prototype.removeItem;
+      Object.defineProperty(window, '__restoreRecoveryStorage', {
+        value: () => {
+          Storage.prototype.getItem = get;
+          Storage.prototype.removeItem = remove;
+        },
+      });
+      if (mode === 'unreadable')
+        Storage.prototype.getItem = function (key) {
+          if (this === window.localStorage) throw new DOMException('Denied', 'SecurityError');
+          return get.call(this, key);
+        };
+      else
+        Storage.prototype.removeItem = function (key) {
+          if (this === window.sessionStorage) throw new DOMException('Denied', 'SecurityError');
+          remove.call(this, key);
+        };
+    }, failure);
+    await page.getByRole('button', { name: '最新の保存データを読み込む', exact: true }).click();
+    await page
+      .getByRole('alertdialog')
+      .getByRole('button', { name: '最新を読み込む', exact: true })
+      .click();
+    await expect(page.locator('main [role=alert]')).toContainText(
+      failure === 'unreadable' ? 'アクセスできません' : '下書きを消去できません',
+    );
+    await expect(page).toHaveURL(/\/payments$/);
+    await expect(page.getByLabel('金額', { exact: true })).toHaveValue('888');
+    expect(await page.evaluate(() => sessionStorage.getItem('warica-payment-draft-v1'))).toBe(
+      draft,
+    );
+    await page.evaluate(() =>
+      (window as unknown as { __restoreRecoveryStorage: () => void }).__restoreRecoveryStorage(),
+    );
+    expect(await page.evaluate((storageKey) => localStorage.getItem(storageKey), key)).toBe(latest);
+    await page.getByRole('button', { name: '最新の保存データを読み込む', exact: true }).click();
+    await page
+      .getByRole('alertdialog')
+      .getByRole('button', { name: '最新を読み込む', exact: true })
+      .click();
+    await expect(page.getByLabel('イベント名', { exact: true })).toHaveValue(
+      '保存済みの最新イベント',
+    );
+    await expect(page.locator('main [role=alert]')).toHaveCount(0);
+    await other.close();
+  });
+}
+
+test('recovery on the member page clears unsubmitted member edits', async ({ page, context }) => {
+  await setup(page);
+  await page.getByRole('link', { name: 'メンバー', exact: true }).click();
+  await page.getByLabel('メンバーの名前', { exact: true }).fill('追加前の名前');
+  await page.getByRole('button', { name: 'あおいの名前を編集', exact: true }).click();
+  await page.getByLabel('新しい名前', { exact: true }).fill('変更前の下書き');
+  const other = await context.newPage();
+  await other.goto('/');
+  await other.getByLabel('イベント名', { exact: true }).fill('切り替え先のイベント');
+  await page.getByRole('button', { name: '最新の保存データを読み込む', exact: true }).click();
+  await page
+    .getByRole('alertdialog')
+    .getByRole('button', { name: '最新を読み込む', exact: true })
+    .click();
+  await expect(page.getByLabel('イベント名', { exact: true })).toHaveValue('切り替え先のイベント');
+  await expect(page.getByLabel('メンバーの名前', { exact: true })).toHaveValue('');
+  await expect(page.getByLabel('新しい名前', { exact: true })).toHaveCount(0);
+  await expect(page.getByTestId('member-list')).toContainText('あおい');
+  await other.close();
+});
