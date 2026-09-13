@@ -29,6 +29,7 @@ function useStore() {
   const [loadBlocked, setLoadBlocked] = useState(false);
   const [storageError, setStorageError] = useState('');
   const [notice, setNotice] = useState('');
+  const [eventRevision, setEventRevision] = useState(0);
 
   function load() {
     const result = loadFromStorage();
@@ -36,6 +37,7 @@ function useStore() {
       rawRef.current = result.data.raw;
       stateRef.current = result.data.state;
       setState(result.data.state);
+      setEventRevision((revision) => revision + 1);
       setStorageError('');
       setLoadBlocked(false);
       setNotice(
@@ -91,6 +93,7 @@ function useStore() {
 
   return {
     state,
+    eventRevision,
     isLoaded,
     loadBlocked,
     storageError,
@@ -170,6 +173,7 @@ function useStore() {
         };
       stateRef.current = next;
       setState(next);
+      setEventRevision((revision) => revision + 1);
       setNotice('');
       return { ok: true, data: undefined };
     },
@@ -193,11 +197,14 @@ function useStore() {
           };
         stateRef.current = result.data;
         setState(result.data);
+        setEventRevision((revision) => revision + 1);
         setLoadBlocked(false);
         setNotice('バックアップファイルから復元しました。');
         return { ok: true, data: undefined };
       }
-      return commit(result.data);
+      const imported = commit(result.data);
+      if (imported.ok) setEventRevision((revision) => revision + 1);
+      return imported;
     },
   };
 }

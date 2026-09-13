@@ -6,7 +6,13 @@ import { IconAction } from './IconAction';
 import type { Payment } from '@/lib/types';
 import { yen } from '@/lib/calculations';
 
-export function PaymentHistory({ onEdit }: { onEdit?: (payment: Payment) => void }) {
+export function PaymentHistory({
+  onEdit,
+  onRemove,
+}: {
+  onEdit?: (payment: Payment) => void;
+  onRemove?: (id: string) => void;
+}) {
   const {
     state: { payments, members },
     removePayment,
@@ -70,8 +76,10 @@ export function PaymentHistory({ onEdit }: { onEdit?: (payment: Payment) => void
                             window.confirm(
                               `「${payment.memo || '立て替え'}」${yen(payment.amount)}を削除しますか？`,
                             )
-                          )
-                            removePayment(payment.id);
+                          ) {
+                            const removed = removePayment(payment.id);
+                            if (removed.ok) onRemove?.(payment.id);
+                          }
                         }}
                       />
                     </div>

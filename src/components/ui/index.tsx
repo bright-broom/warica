@@ -4,6 +4,7 @@ import type {
   SelectHTMLAttributes,
   TextareaHTMLAttributes,
   ReactNode,
+  Ref,
 } from 'react';
 import { Info, TriangleAlert, type LucideIcon } from 'lucide-react';
 
@@ -74,13 +75,25 @@ export function Avatar({ name }: { name: string }) {
 }
 
 const fieldStyle =
-  'min-h-control w-full min-w-0 rounded-control border border-main/15 bg-sub px-4 py-3 text-base text-main placeholder:text-main/50 transition-colors hover:border-main/35 focus:border-main focus:outline-2 focus:outline-offset-2 focus:outline-main disabled:opacity-40';
+  'min-h-control w-full min-w-0 rounded-control border border-main/15 bg-sub px-4 py-3 text-main placeholder:text-main/50 transition-colors hover:border-main/35 focus:border-main focus:outline-2 focus:outline-offset-2 focus:outline-main disabled:opacity-40';
 
-export function TextInput({ className, ...props }: InputHTMLAttributes<HTMLInputElement>) {
-  return <input {...props} className={cx(fieldStyle, className)} />;
+const inputVariants = {
+  default: 'text-base',
+  amount:
+    'h-20 border-main/10 bg-accent/10 pl-10 pr-3 text-3xl font-semibold tracking-tight tabular-nums sm:text-4xl',
+};
+export function TextInput({
+  className,
+  variant = 'default',
+  ...props
+}: InputHTMLAttributes<HTMLInputElement> & {
+  variant?: keyof typeof inputVariants;
+  ref?: Ref<HTMLInputElement>;
+}) {
+  return <input {...props} className={cx(fieldStyle, inputVariants[variant], className)} />;
 }
 export function SelectInput({ className, ...props }: SelectHTMLAttributes<HTMLSelectElement>) {
-  return <select {...props} className={cx(fieldStyle, 'pr-8', className)} />;
+  return <select {...props} className={cx(fieldStyle, 'pr-8 text-base', className)} />;
 }
 export function TextArea({ className, ...props }: TextareaHTMLAttributes<HTMLTextAreaElement>) {
   return (
