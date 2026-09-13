@@ -439,6 +439,8 @@ test('replacing an event clears drafts and individual transfers can be copied wi
     .getByRole('alertdialog')
     .getByRole('button', { name: '読み込む', exact: true })
     .click();
+  // Import returns to members asynchronously; wait before choosing the next arrow.
+  await expect(page).toHaveURL(/\/$/);
   await goToStep(page, '/payments');
   await expect(page.getByLabel('金額', { exact: true })).toHaveValue('');
   await page.getByLabel('金額', { exact: true }).fill('3000');
