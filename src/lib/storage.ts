@@ -7,6 +7,11 @@ export const STORAGE_KEY = 'warican-app-data-v2';
 export const BACKUP_KEY = 'warican-backup-v2';
 export const MAX_FILE_SIZE = 2 * 1024 * 1024;
 export type StoragePort = Pick<Storage, 'getItem' | 'setItem'>;
+export const STORAGE_CONFLICT_MESSAGE =
+  '別の画面で保存データが変更されました。この画面の入力は保持しています。必要ならバックアップしてから、最新の保存データを読み込んでください。';
+type SaveResult =
+  | { ok: true; data: string }
+  | { ok: false; error: string; code: 'conflict' | 'invalid' | 'unavailable' };
 const object = (value: unknown): value is Record<string, unknown> =>
   !!value && typeof value === 'object' && !Array.isArray(value);
 const validId = (value: unknown): value is string =>
@@ -58,24 +63,27 @@ export function parseState(raw: string): Result<WarikanState> {
     )
       throw new Error('イベントデータが不正です。');
     const members: WarikanState['members'][number][] = [];
+    const memberIds = new Set<string>();
     for (const item of data.members) {
       if (
         !object(item) ||
         !validId(item.id) ||
         typeof item.name !== 'string' ||
-        members.some((m) => m.id === item.id)
+        memberIds.has(item.id)
       )
         throw new Error('メンバーデータが不正です。');
       const result = validateMemberName(item.name, members);
       if (!result.ok) throw new Error(result.error);
       members.push({ id: item.id, name: result.data });
+      memberIds.add(item.id);
     }
     const payments: Payment[] = [];
+    const paymentIds = new Set<string>();
     for (const item of data.payments) {
       if (
         !object(item) ||
         !validId(item.id) ||
-        payments.some((p) => p.id === item.id) ||
+        paymentIds.has(item.id) ||
         !validId(item.payerId) ||
         typeof item.amount !== 'number' ||
         !validDate(item.createdAt) ||
@@ -103,6 +111,7 @@ export function parseState(raw: string): Result<WarikanState> {
         createdAt: item.createdAt,
         ...(legacy || item.needsReview ? { needsReview: true } : {}),
       });
+      paymentIds.add(item.id);
     }
     const state: WarikanState = {
       eventName: data.eventName,
@@ -163,19 +172,19 @@ export function saveToStorage(
   state: WarikanState,
   expectedRaw: string | null,
   storage?: StoragePort,
-): Result<string> {
+): SaveResult {
   try {
     storage ??= window.localStorage;
     const previous = storage.getItem(STORAGE_KEY);
     if (previous !== expectedRaw)
       return {
         ok: false,
-        error:
-          '別の画面で保存データが変更されました。この画面の入力は保持しています。バックアップを保存してから再読み込みしてください。',
+        code: 'conflict',
+        error: STORAGE_CONFLICT_MESSAGE,
       };
     const serialized = serializeState(state);
     const validated = parseState(serialized);
-    if (!validated.ok) return validated;
+    if (!validated.ok) return { ...validated, code: 'invalid' };
     // Preserve the previous valid snapshot; never replace a good backup with corrupt data.
     if (previous !== null && parseState(previous).ok) {
       try {
@@ -189,6 +198,7 @@ export function saveToStorage(
   } catch {
     return {
       ok: false,
+      code: 'unavailable',
       error:
         'ブラウザに保存できませんでした。入力はこの画面に残っています。再試行するか、バックアップを保存してください。',
     };

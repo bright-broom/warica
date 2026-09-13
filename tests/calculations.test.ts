@@ -153,3 +153,22 @@ test('LINE copy includes exact transfers and preserves a legacy warning', () => 
   assert.doesNotMatch(text, /【支払いの内訳】/);
   assert.match(text, /旧バージョン/);
 });
+
+test('participant selection order cannot change who bears the spare yen in a 100-member group', () => {
+  const group = Array.from({ length: 100 }, (_, i) => ({ id: `m${i}`, name: `Member ${i}` }));
+  const selected = group.filter((_, i) => i % 2 === 0).map((m) => m.id);
+  const input = payment(1_001, [...selected].reverse(), 'm99');
+  const result = validatePayment(input, group);
+  assert.ok(result.ok);
+  assert.deepEqual(result.data.participantIds, selected);
+  assert.deepEqual(input.participantIds, [...selected].reverse(), 'input must stay untouched');
+  const balances = calculateMemberBalances(group, [{ ...input, ...result.data }]);
+  assert.equal(balances[0].share, 21);
+  assert.equal(balances[2].share, 20);
+  assert.equal(balances[99].share, 0);
+  assert.equal(balances[99].paid, 1_001);
+  assert.equal(
+    balances.reduce((sum, member) => sum + member.share, 0),
+    1_001,
+  );
+});
