@@ -24,6 +24,7 @@ export interface WarikanState {
   readonly members: readonly Member[];
   readonly payments: readonly Payment[];
   readonly lastUpdated: string;
+  readonly paypayLinks?: readonly PayPayRequestLink[];
 }
 
 export interface MemberBalance {
@@ -40,6 +41,10 @@ export interface Settlement {
   readonly from: string;
   readonly to: string;
   readonly amount: number;
+}
+
+export interface PayPayRequestLink extends Settlement {
+  readonly url: string;
 }
 
 export type Result<T> = { ok: true; data: T } | { ok: false; error: string };

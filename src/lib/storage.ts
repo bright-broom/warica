@@ -1,3 +1,4 @@
+import { parsePayPayLinks } from './paypay';
 import { emptyState, type WarikanState, type Result, type Payment } from './types';
 import { MAX_MEMBERS, MAX_PAYMENTS, validateMemberName, validatePayment } from './validation';
 
@@ -23,7 +24,7 @@ function checksum(data: unknown): string {
 export function serializeState(state: WarikanState): string {
   return JSON.stringify(
     {
-      metadata: { version: '3.0.0', timestamp: Date.now(), checksum: checksum(state) },
+      metadata: { version: '3.1.0', timestamp: Date.now(), checksum: checksum(state) },
       data: state,
     },
     null,
@@ -41,7 +42,7 @@ export function parseState(raw: string): Result<WarikanState> {
       throw new Error('WARICAのバックアップファイルを選択してください。');
     const { metadata, data } = container;
     if (
-      !['2.0.0', '3.0.0'].includes(String(metadata.version)) ||
+      !['2.0.0', '3.0.0', '3.1.0'].includes(String(metadata.version)) ||
       !Number.isFinite(metadata.timestamp) ||
       metadata.checksum !== checksum(data)
     )
@@ -103,10 +104,18 @@ export function parseState(raw: string): Result<WarikanState> {
         ...(legacy || item.needsReview ? { needsReview: true } : {}),
       });
     }
-    return {
-      ok: true,
-      data: { eventName: data.eventName, members, payments, lastUpdated: data.lastUpdated },
+    const state: WarikanState = {
+      eventName: data.eventName,
+      members,
+      payments,
+      lastUpdated: data.lastUpdated,
     };
+    if (data.paypayLinks !== undefined) {
+      const links = parsePayPayLinks(data.paypayLinks, state);
+      if (!links.ok) throw new Error(links.error);
+      return { ok: true, data: { ...state, paypayLinks: links.data } };
+    }
+    return { ok: true, data: state };
   } catch (error) {
     return {
       ok: false,
