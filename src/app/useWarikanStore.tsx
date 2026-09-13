@@ -29,6 +29,7 @@ function useStore() {
   const [loadBlocked, setLoadBlocked] = useState(false);
   const [storageError, setStorageError] = useState('');
   const [notice, setNotice] = useState('');
+  // Only explicit replacement resets drafts; initial load/retry can restore them.
   const [eventRevision, setEventRevision] = useState(0);
 
   function load() {
@@ -37,7 +38,6 @@ function useStore() {
       rawRef.current = result.data.raw;
       stateRef.current = result.data.state;
       setState(result.data.state);
-      setEventRevision((revision) => revision + 1);
       setStorageError('');
       setLoadBlocked(false);
       setNotice(
@@ -93,6 +93,7 @@ function useStore() {
 
   return {
     state,
+    getCurrentState: () => stateRef.current,
     eventRevision,
     isLoaded,
     loadBlocked,

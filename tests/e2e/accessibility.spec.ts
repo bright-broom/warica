@@ -64,7 +64,9 @@ test('all pages and confirmation expose accessible names and readable text', asy
   await page.getByRole('link', { name: '精算結果を見る' }).click();
   await expect(page.getByTestId('transfer-list')).toBeVisible();
   await scan('result');
-  await page.getByRole('button', { name: '新しく始める' }).click();
+  await page.getByRole('button', { name: 'メニュー' }).click();
+  await scan('menu');
+  await page.getByRole('menuitem', { name: '新しく始める' }).click();
   await expect(page.getByRole('alertdialog')).toBeVisible();
   await scan('confirmation');
 });

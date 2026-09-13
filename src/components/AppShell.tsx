@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import {
   ArrowDownToLine,
   ArrowUpFromLine,
@@ -12,7 +12,17 @@ import {
   Users,
   Wallet,
   ArrowRight,
+  MoreHorizontal,
+  RefreshCw,
+  CirclePlus,
 } from 'lucide-react';
+import { usePaymentWorkspace } from './PaymentWorkspace';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from './ui/dropdown-menu';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Spinner } from './ui/spinner';
@@ -29,16 +39,44 @@ export function AppShell({ children }: { children: ReactNode }) {
     router = useRouter();
   const store = useWarikanStore();
   const confirm = useConfirmation();
+  const workspace = usePaymentWorkspace();
   const { state, isLoaded, loadBlocked, storageError, notice, total } = store;
   const inputRef = useRef<HTMLInputElement>(null);
   const [message, setMessage] = useState('');
+  const allowReload = useRef(false);
+  const menuTrigger = useRef<HTMLButtonElement>(null);
+  const pendingReset = useRef(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const steps = navigation(state);
   const current = steps.find((step) => step.href === path);
   const saveLabel = !isLoaded
     ? '読み込み中'
-    : storageError
+    : storageError || workspace.storageError
       ? '未保存・要確認'
       : 'このブラウザに保存';
+  useEffect(() => {
+    if (!storageError && !workspace.storageError) return;
+    const protect = (event: BeforeUnloadEvent) => {
+      if (allowReload.current) return;
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', protect);
+    return () => window.removeEventListener('beforeunload', protect);
+  }, [storageError, workspace.storageError]);
+
+  function retry() {
+    store.retryStorage();
+    workspace.retryStorage();
+  }
+  function refresh() {
+    const saved = store.retryStorage();
+    const draftSaved = workspace.retryStorage();
+    if (saved && draftSaved) {
+      allowReload.current = true;
+      window.location.reload();
+    }
+  }
   function download() {
     const url = URL.createObjectURL(
       new Blob([serializeState(state)], { type: 'application/json' }),
@@ -87,7 +125,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     if (
       !(await confirm({
         title: '新しいイベント',
-        description: '現在の入力をクリアします。必要なデータは先にバックアップしてください。',
+        description: 'メンバー・支払い・入力途中の下書きをすべて消去します。元には戻せません。',
         action: '新しく始める',
         icon: RotateCcw,
       }))
@@ -101,7 +139,11 @@ export function AppShell({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="mx-auto min-h-dvh max-w-6xl px-4 sm:px-8 lg:px-12" data-testid="app-shell">
+    <div
+      className="mx-auto min-h-dvh max-w-6xl px-4 sm:px-8 lg:px-12"
+      data-testid="app-shell"
+      inert={menuOpen || undefined}
+    >
       <a
         className="sr-only z-50 rounded-control bg-accent p-4 focus:not-sr-only focus:fixed focus:top-4"
         href="#main"
@@ -121,20 +163,59 @@ export function AppShell({ children }: { children: ReactNode }) {
             warica<span className="text-main/40">.</span>
           </span>
         </Link>
-        <span
-          className="flex size-control items-center justify-center text-muted-foreground"
-          role="status"
-          title={saveLabel}
-        >
-          {!isLoaded ? (
-            <Spinner className="size-5 motion-reduce:animate-none" aria-hidden="true" />
-          ) : storageError ? (
-            <RotateCcw size={20} aria-hidden="true" />
-          ) : (
-            <CheckCheck size={20} aria-hidden="true" />
-          )}
-          <span className="sr-only">{saveLabel}</span>
-        </span>
+        <div className="flex items-center gap-1">
+          <span
+            className="flex size-control items-center justify-center text-muted-foreground"
+            role="status"
+            title={saveLabel}
+          >
+            {!isLoaded ? (
+              <Spinner className="size-5 motion-reduce:animate-none" aria-hidden="true" />
+            ) : storageError || workspace.storageError ? (
+              <RotateCcw size={20} aria-hidden="true" />
+            ) : (
+              <CheckCheck size={20} aria-hidden="true" />
+            )}
+            <span className="sr-only">{saveLabel}</span>
+          </span>
+          <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
+            <DropdownMenuTrigger asChild>
+              <Button
+                ref={menuTrigger}
+                variant="ghost"
+                size="icon"
+                aria-label="メニュー"
+                title="メニュー"
+              >
+                <MoreHorizontal className="size-5" aria-hidden="true" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="end"
+              onCloseAutoFocus={(event) => {
+                if (!pendingReset.current) return;
+                event.preventDefault();
+                pendingReset.current = false;
+                menuTrigger.current?.focus();
+                void reset();
+              }}
+            >
+              <DropdownMenuItem disabled={!isLoaded || loadBlocked} onSelect={refresh}>
+                <RefreshCw aria-hidden="true" />
+                リフレッシュ
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                disabled={!isLoaded || loadBlocked}
+                onSelect={() => {
+                  pendingReset.current = true;
+                }}
+              >
+                <CirclePlus aria-hidden="true" />
+                新しく始める
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </header>
       <div className="grid items-start gap-6 lg:grid-cols-[12rem_minmax(0,1fr)] lg:gap-12">
         <aside className="contents lg:sticky lg:top-8 lg:block lg:min-w-0">
@@ -210,18 +291,34 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         </aside>
         <main id="main" tabIndex={-1} className="min-w-0 space-y-5 pb-32 sm:space-y-6 lg:pb-8">
-          {storageError && (
+          {(storageError || workspace.storageError) && (
             <Notice alert>
-              <p>{storageError}</p>
-              <IconAction
-                label="保存を再試行"
-                icon={RotateCcw}
-                variant="secondary"
-                onClick={store.retryStorage}
-              />
+              {storageError && <p>{storageError}</p>}
+              {workspace.storageError && <p>{workspace.storageError}</p>}
+              <div className="flex flex-wrap gap-2">
+                <IconAction
+                  label="保存を再試行"
+                  icon={RotateCcw}
+                  variant="secondary"
+                  onClick={retry}
+                />
+                <IconAction
+                  label="バックアップ"
+                  icon={ArrowDownToLine}
+                  onClick={download}
+                  disabled={!isLoaded || loadBlocked}
+                />
+                <IconAction
+                  label="読み込む"
+                  icon={ArrowUpFromLine}
+                  onClick={() => inputRef.current?.click()}
+                  disabled={!isLoaded}
+                />
+              </div>
             </Notice>
           )}
           {notice && <Notice>{notice}</Notice>}
+          {message && <Notice>{message}</Notice>}
           {!isLoaded ? (
             <div className="flex justify-center py-20" role="status">
               <Spinner className="size-6 motion-reduce:animate-none" aria-hidden="true" />
@@ -231,6 +328,11 @@ export function AppShell({ children }: { children: ReactNode }) {
             <EmptyState icon={ShieldCheck}>
               <h1>保存データを確認してください</h1>
               <p>再試行するか、バックアップを読み込んでください。</p>
+            </EmptyState>
+          ) : workspace.readBlocked && path !== routes.result ? (
+            <EmptyState icon={ShieldCheck}>
+              <h1>下書きを確認してください</h1>
+              <p>保存を再試行すると入力を再開できます。</p>
             </EmptyState>
           ) : current && !current.ready && current.blockedTitle ? (
             <EmptyState icon={current.icon}>
@@ -245,42 +347,14 @@ export function AppShell({ children }: { children: ReactNode }) {
           ) : (
             children
           )}
-          <footer className="border-t border-main/10 pt-5">
-            <div className="flex justify-center gap-2">
-              <IconAction
-                label="バックアップ"
-                icon={ArrowDownToLine}
-                onClick={download}
-                disabled={!isLoaded || loadBlocked}
-              />
-              <IconAction
-                label="読み込む"
-                icon={ArrowUpFromLine}
-                onClick={() => inputRef.current?.click()}
-                disabled={!isLoaded}
-              />
-              <IconAction
-                label="新しく始める"
-                icon={RotateCcw}
-                onClick={reset}
-                disabled={!isLoaded || loadBlocked}
-              />
-            </div>
-            <Input
-              ref={inputRef}
-              type="file"
-              accept=".json,application/json"
-              aria-label="バックアップファイル"
-              className="hidden"
-              onChange={(e) => void importFile(e.target.files?.[0])}
-            />
-            <p
-              className="mt-2 text-center text-xs leading-6 text-muted-foreground wrap-anywhere"
-              role="status"
-            >
-              {message}
-            </p>
-          </footer>
+          <Input
+            ref={inputRef}
+            type="file"
+            accept=".json,application/json"
+            aria-label="バックアップファイル"
+            className="hidden"
+            onChange={(e) => void importFile(e.target.files?.[0])}
+          />
         </main>
       </div>
     </div>
