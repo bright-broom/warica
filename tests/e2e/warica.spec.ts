@@ -1,5 +1,14 @@
 import { expect, test, type Page } from '@playwright/test';
+import { serializeState } from '../../src/lib/storage';
+import { emptyState } from '../../src/lib/types';
 const key = 'warican-app-data-v2';
+async function offerBackup(page: Page, raw: string) {
+  await page.getByLabel('バックアップファイル').setInputFiles({
+    name: 'backup.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(raw),
+  });
+}
 async function setup(page: Page) {
   await page.goto('/');
   await page.getByLabel('イベント名', { exact: true }).fill('週末の京都旅行');
@@ -91,10 +100,10 @@ test('complete flow: selected participants, immediate reload, edit, copy fallbac
     (window as unknown as { __restoreWrites: () => void }).__restoreWrites(),
   );
   await page.getByRole('button', { name: '保存を再試行' }).click();
-  await menu(page, '新しく始める');
+  await offerBackup(page, serializeState(emptyState()));
   await page
     .getByRole('alertdialog')
-    .getByRole('button', { name: '新しく始める', exact: true })
+    .getByRole('button', { name: '読み込む', exact: true })
     .click();
   await expect(page.getByLabel('イベント名', { exact: true })).toHaveValue('');
   await page.reload();
@@ -445,10 +454,10 @@ test('replacing an event clears drafts and individual transfers can be copied wi
   );
   await page.getByRole('link', { name: '支払い', exact: true }).click();
   await page.getByLabel('金額', { exact: true }).fill('800');
-  await menu(page, '新しく始める');
+  await offerBackup(page, serializeState(emptyState()));
   await page
     .getByRole('alertdialog')
-    .getByRole('button', { name: '新しく始める', exact: true })
+    .getByRole('button', { name: '読み込む', exact: true })
     .click();
   await page.getByLabel('イベント名', { exact: true }).fill('新しい集まり');
   for (const name of ['A', 'B']) {
@@ -467,6 +476,7 @@ test('replacing an event clears drafts and individual transfers can be copied wi
 
 test('shadcn controls support keyboard selection, help, tooltips and safe confirmation focus', async ({
   page,
+  context,
 }) => {
   await setup(page);
   const choice = page.getByLabel('宿泊', { exact: true });
@@ -490,12 +500,19 @@ test('shadcn controls support keyboard selection, help, tooltips and safe confir
   ).toBeVisible();
   await help.click();
   await expect(help).toHaveAttribute('aria-expanded', 'false');
-  const reset = page.getByRole('button', { name: 'メニュー', exact: true });
-  await reset.focus();
-  await reset.press('Enter');
-  await page.getByRole('menuitem', { name: '新しく始める', exact: true }).press('End');
+  const other = await context.newPage();
+  await other.goto('/');
+  await other.getByLabel('イベント名', { exact: true }).fill('別タブのイベント');
+  await expect(
+    page.getByRole('button', { name: '最新の保存データを読み込む', exact: true }),
+  ).toBeVisible();
+  await other.close();
+  const trigger = page.getByRole('button', { name: 'メニュー', exact: true });
+  await trigger.focus();
+  await trigger.press('Enter');
+  await page.getByRole('menuitem', { name: 'リフレッシュ', exact: true }).focus();
   await page.keyboard.press('Enter');
-  const dialog = page.getByRole('alertdialog', { name: '新しいイベント' });
+  const dialog = page.getByRole('alertdialog', { name: '最新の保存データ' });
   await expect(dialog.getByRole('button', { name: 'キャンセル' })).toBeFocused();
   for (let i = 0; i < 4; i++) {
     await page.keyboard.press('Tab');
@@ -503,7 +520,7 @@ test('shadcn controls support keyboard selection, help, tooltips and safe confir
   }
   await page.keyboard.press('Escape');
   await expect(dialog).toBeHidden();
-  await expect(reset).toBeFocused();
+  await expect(trigger).toBeFocused();
   await expect(page.getByLabel('金額', { exact: true })).toBeVisible();
   await noOverflow(page);
 });
@@ -627,7 +644,7 @@ test('mobile actions stay in the right half with usable touch targets', async ({
     .getByLabel('PayPay請求リンク', { exact: true })
     .fill('https://www.paypay.ne.jp/example');
   await page.getByRole('button', { name: 'リンク編集をキャンセル' }).click();
-  await menu(page, '新しく始める');
+  await offerBackup(page, serializeState(emptyState()));
   await rightHandActions();
   await page
     .getByRole('alertdialog')
@@ -759,7 +776,7 @@ test('backup recovery invalidates old drafts even when session storage cannot be
   await expect(page.locator('main [role=alert]')).toHaveCount(0);
 });
 
-test('a failed reset keeps the event and both new and editing drafts', async ({ page }) => {
+test('a failed refresh keeps the event and both new and editing drafts', async ({ page }) => {
   await setup(page);
   await page.getByLabel('金額', { exact: true }).fill('3000');
   await page.getByLabel('何の支払い？').fill('ランチ');
@@ -770,11 +787,7 @@ test('a failed reset keeps the event and both new and editing drafts', async ({ 
   const saved = await page.evaluate((storageKey) => localStorage.getItem(storageKey), key);
   const draft = await page.evaluate(() => sessionStorage.getItem('warica-payment-draft-v1'));
   await denyLocalWrites(page);
-  await menu(page, '新しく始める');
-  await page
-    .getByRole('alertdialog')
-    .getByRole('button', { name: '新しく始める', exact: true })
-    .click();
+  await menu(page, 'リフレッシュ');
   await expect(page.locator('main [role=alert]')).toContainText('保存できません');
   await expect(page).toHaveURL(/\/payments$/);
   await expect(page.getByLabel('金額', { exact: true })).toHaveValue('1234');

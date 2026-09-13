@@ -2,7 +2,7 @@ import { Smile, Sparkles, Heart } from 'lucide-react';
 
 export function PopWelcome() {
   return (
-    <section className="pop-only pop-welcome" aria-label="みんなの、わりかん。">
+    <section className="pop-welcome" aria-label="みんなの、わりかん。">
       <div className="pop-welcome-copy">
         <p className="pop-eyebrow">みんなの、わりかん。</p>
         <p className="pop-headline">

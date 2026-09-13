@@ -14,11 +14,8 @@ import {
   ArrowRight,
   MoreHorizontal,
   RefreshCw,
-  CirclePlus,
-  Palette,
 } from 'lucide-react';
 import { usePaymentWorkspace } from './PaymentWorkspace';
-import { useAppearance } from './AppearanceProvider';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -37,7 +34,6 @@ import { MAX_FILE_SIZE, parseState, serializeState } from '@/lib/storage';
 import { yen } from '@/lib/calculations';
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const { appearance, toggle } = useAppearance();
   const mainRef = useRef<HTMLElement>(null);
   const path = usePathname(),
     router = useRouter();
@@ -49,7 +45,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [message, setMessage] = useState('');
   const allowReload = useRef(false);
   const menuTrigger = useRef<HTMLButtonElement>(null);
-  const pendingAction = useRef<'reset' | 'refresh' | null>(null);
+  const pendingRefresh = useRef(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const steps = navigation(state);
   const current = steps.find((step) => step.href === path);
@@ -147,23 +143,6 @@ export function AppShell({ children }: { children: ReactNode }) {
     }
   }
 
-  async function reset() {
-    if (
-      !(await confirm({
-        title: '新しいイベント',
-        description: 'メンバー・支払い・入力途中の下書きをすべて消去します。元には戻せません。',
-        action: '新しく始める',
-        icon: RotateCcw,
-      }))
-    )
-      return;
-    const result = store.resetAll();
-    if (result.ok) {
-      router.push(routes.members);
-      setMessage('');
-    } else setMessage(result.error);
-  }
-
   return (
     <div
       className="mx-auto min-h-dvh max-w-6xl px-4 max-lg:flex max-lg:h-dvh max-lg:flex-col sm:px-8 lg:px-12"
@@ -223,36 +202,21 @@ export function AppShell({ children }: { children: ReactNode }) {
             <DropdownMenuContent
               align="end"
               onCloseAutoFocus={(event) => {
-                const action = pendingAction.current;
-                if (!action) return;
+                if (!pendingRefresh.current) return;
                 event.preventDefault();
-                pendingAction.current = null;
+                pendingRefresh.current = false;
                 menuTrigger.current?.focus();
-                if (action === 'reset') void reset();
-                else void refresh();
+                void refresh();
               }}
             >
-              <DropdownMenuItem onSelect={toggle}>
-                <Palette aria-hidden="true" />
-                {appearance === 'pop' ? '以前のデザインに戻す' : 'ポップなデザインにする'}
-              </DropdownMenuItem>
               <DropdownMenuItem
                 disabled={!isLoaded || loadBlocked}
                 onSelect={() => {
-                  pendingAction.current = 'refresh';
+                  pendingRefresh.current = true;
                 }}
               >
                 <RefreshCw aria-hidden="true" />
                 リフレッシュ
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                disabled={!isLoaded || loadBlocked}
-                onSelect={() => {
-                  pendingAction.current = 'reset';
-                }}
-              >
-                <CirclePlus aria-hidden="true" />
-                新しく始める
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -263,16 +227,14 @@ export function AppShell({ children }: { children: ReactNode }) {
           <nav
             data-ui="navigation"
             aria-label="割り勘の手順"
-            className="fixed right-4 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-40 w-[10.5rem] rounded-panel border border-main bg-main/95 p-2 shadow-lg shadow-main/20 backdrop-blur-lg lg:static lg:w-full lg:bg-main lg:shadow-none"
+            className="fixed right-4 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-40 w-[10.5rem] rounded-panel backdrop-blur-lg lg:static lg:w-full"
           >
             <ol className="grid grid-cols-3 gap-1 lg:gap-2">
               {steps.map((step) => {
                 const active = path === step.href;
                 const style = cx(
-                  'flex h-12 w-full items-center justify-center rounded-control transition-shadow focus-visible:outline-accent focus-visible:ring-accent lg:h-14',
-                  active
-                    ? 'accent-surface text-main'
-                    : 'bg-main/0 text-sub/80 hover:bg-sub/10 hover:text-sub',
+                  'flex h-12 w-full items-center justify-center rounded-control transition-shadow lg:h-14',
+                  active ? 'accent-surface text-main' : 'text-main',
                 );
                 return (
                   <li key={step.href}>
