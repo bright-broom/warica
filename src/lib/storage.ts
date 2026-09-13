@@ -63,24 +63,27 @@ export function parseState(raw: string): Result<WarikanState> {
     )
       throw new Error('イベントデータが不正です。');
     const members: WarikanState['members'][number][] = [];
+    const memberIds = new Set<string>();
     for (const item of data.members) {
       if (
         !object(item) ||
         !validId(item.id) ||
         typeof item.name !== 'string' ||
-        members.some((m) => m.id === item.id)
+        memberIds.has(item.id)
       )
         throw new Error('メンバーデータが不正です。');
       const result = validateMemberName(item.name, members);
       if (!result.ok) throw new Error(result.error);
       members.push({ id: item.id, name: result.data });
+      memberIds.add(item.id);
     }
     const payments: Payment[] = [];
+    const paymentIds = new Set<string>();
     for (const item of data.payments) {
       if (
         !object(item) ||
         !validId(item.id) ||
-        payments.some((p) => p.id === item.id) ||
+        paymentIds.has(item.id) ||
         !validId(item.payerId) ||
         typeof item.amount !== 'number' ||
         !validDate(item.createdAt) ||
@@ -108,6 +111,7 @@ export function parseState(raw: string): Result<WarikanState> {
         createdAt: item.createdAt,
         ...(legacy || item.needsReview ? { needsReview: true } : {}),
       });
+      paymentIds.add(item.id);
     }
     const state: WarikanState = {
       eventName: data.eventName,
