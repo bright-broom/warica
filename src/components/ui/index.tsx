@@ -87,7 +87,7 @@ export function Avatar({ name }: { name: string }) {
   );
 }
 const fieldStyle =
-  'min-h-control min-w-0 rounded-control border-main/15 bg-sub px-4 py-3 text-base text-main shadow-none placeholder:text-main/50 hover:border-main/35 focus-visible:border-main focus-visible:ring-main/20 disabled:opacity-40';
+  'min-h-control min-w-0 rounded-control border-main/15 bg-sub px-4 py-3 text-base text-main shadow-none placeholder:text-muted-foreground hover:border-main/35 focus-visible:border-main focus-visible:ring-main/20 disabled:opacity-40';
 const inputVariants = {
   default: '',
   amount:
@@ -133,7 +133,7 @@ export function Field({
       <FieldLabel
         htmlFor={id}
         title={label}
-        className={Icon ? 'flex h-6 items-center text-main/65' : 'sr-only'}
+        className={Icon ? 'flex h-6 items-center text-muted-foreground' : 'sr-only'}
       >
         {Icon && <Icon size={18} aria-hidden="true" />}
         <span className="sr-only">{label}</span>
@@ -157,7 +157,7 @@ export function Notice({ children, alert = false }: { children: ReactNode; alert
 }
 export function Help({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <Collapsible className="mt-3 text-xs leading-6 text-main/70">
+    <Collapsible className="mt-3 text-xs leading-6 text-muted-foreground">
       <CollapsibleTrigger asChild>
         <Button variant="ghost" size="icon" aria-label={label} title={label}>
           <Info className="size-[18px]" aria-hidden="true" />
@@ -173,7 +173,7 @@ export function EmptyState({ icon: Icon, children }: { icon: LucideIcon; childre
   return (
     <Empty className="gap-4 rounded-panel px-0 py-10 text-sm leading-6 wrap-anywhere md:p-10">
       <EmptyMedia>
-        <Icon size={32} className="text-main/50" aria-hidden="true" />
+        <Icon size={32} className="text-muted-foreground" aria-hidden="true" />
       </EmptyMedia>
       <EmptyContent>{children}</EmptyContent>
     </Empty>

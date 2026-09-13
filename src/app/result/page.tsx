@@ -101,7 +101,7 @@ export default function ResultPage() {
                 key={`${settlement.fromId}-${settlement.toId}`}
                 className="grid grid-cols-[1.25rem_minmax(0,1fr)_3rem] items-center gap-x-3 gap-y-2 py-5 first:pt-0 sm:grid-cols-[1.5rem_minmax(0,1fr)_auto_3rem]"
               >
-                <span className="text-xs text-main/45 tabular-nums" aria-hidden="true">
+                <span className="text-xs text-muted-foreground tabular-nums" aria-hidden="true">
                   {String(i + 1).padStart(2, '0')}
                 </span>
                 <div className="col-span-2 grid min-w-0 grid-cols-[minmax(0,1fr)_1rem_minmax(0,1fr)] sm:col-span-1 items-center gap-2 text-sm font-medium wrap-anywhere">
@@ -169,11 +169,11 @@ export default function ResultPage() {
                 </div>
                 <dl className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.15fr)] items-start gap-2 text-xs tabular-nums">
                   <div className="space-y-2">
-                    <dt className="text-main/60">支払</dt>
+                    <dt className="text-muted-foreground">支払</dt>
                     <dd className="wrap-anywhere">{yen(balance.paid)}</dd>
                   </div>
                   <div className="space-y-2">
-                    <dt className="text-main/60">負担</dt>
+                    <dt className="text-muted-foreground">負担</dt>
                     <dd className="wrap-anywhere">{yen(balance.share)}</dd>
                   </div>
                   <div className="space-y-1.5">
