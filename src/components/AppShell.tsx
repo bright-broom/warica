@@ -15,8 +15,10 @@ import {
   MoreHorizontal,
   RefreshCw,
   CirclePlus,
+  Palette,
 } from 'lucide-react';
 import { usePaymentWorkspace } from './PaymentWorkspace';
+import { useAppearance } from './AppearanceProvider';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -35,6 +37,7 @@ import { MAX_FILE_SIZE, parseState, serializeState } from '@/lib/storage';
 import { yen } from '@/lib/calculations';
 
 export function AppShell({ children }: { children: ReactNode }) {
+  const { appearance, toggle } = useAppearance();
   const mainRef = useRef<HTMLElement>(null);
   const path = usePathname(),
     router = useRouter();
@@ -180,7 +183,10 @@ export function AppShell({ children }: { children: ReactNode }) {
             className="absolute inset-0 hidden rounded-control lg:block"
             aria-label="WARICA ホーム"
           />
-          <span className="flex size-10 items-center justify-center rounded-control accent-surface">
+          <span
+            data-ui="brand-mark"
+            className="flex size-10 items-center justify-center rounded-control accent-surface"
+          >
             <Split size={22} strokeWidth={2.5} aria-hidden="true" />
           </span>
           <span>
@@ -226,6 +232,10 @@ export function AppShell({ children }: { children: ReactNode }) {
                 else void refresh();
               }}
             >
+              <DropdownMenuItem onSelect={toggle}>
+                <Palette aria-hidden="true" />
+                {appearance === 'pop' ? '以前のデザインに戻す' : 'ポップなデザインにする'}
+              </DropdownMenuItem>
               <DropdownMenuItem
                 disabled={!isLoaded || loadBlocked}
                 onSelect={() => {
@@ -251,6 +261,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div className="grid min-h-0 items-start gap-6 max-lg:flex-1 max-lg:grid-rows-[minmax(0,1fr)] max-lg:pb-[calc(5.5rem+env(safe-area-inset-bottom))] lg:grid-cols-[12rem_minmax(0,1fr)] lg:gap-12">
         <aside className="contents lg:sticky lg:top-8 lg:block lg:min-w-0">
           <nav
+            data-ui="navigation"
             aria-label="割り勘の手順"
             className="fixed right-4 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-40 w-[10.5rem] rounded-panel border border-main bg-main/95 p-2 shadow-lg shadow-main/20 backdrop-blur-lg lg:static lg:w-full lg:bg-main lg:shadow-none"
           >
