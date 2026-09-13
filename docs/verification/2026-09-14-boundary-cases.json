@@ -1,0 +1,42 @@
+{
+  "checkedAt": "2026-09-14",
+  "timezone": "Asia/Tokyo",
+  "sourceCommit": "191f725746d925e1a6ededa7d225cdf45b0488f8",
+  "environment": {
+    "target": "local production build",
+    "baseURL": "http://127.0.0.1:3100",
+    "browser": "Playwright Chromium",
+    "data": "isolated browser contexts with synthetic records"
+  },
+  "note": "Historical observations of unresolved boundaries; not passing regression tests. Original case payloads are retained below.",
+  "observations": [
+    {
+      "case": "nondecimal-amount",
+      "input": "1e3",
+      "stored": 1000
+    },
+    {
+      "case": "nondecimal-amount",
+      "input": "0x10",
+      "stored": 16
+    },
+    {
+      "case": "oversize-draft",
+      "blockedAfterRetry": true,
+      "editableAmountFields": 0
+    },
+    {
+      "case": "capacity-event-name",
+      "bytes": 2097148,
+      "count": 6923,
+      "inputAfterEdit": "E",
+      "alerts": [""],
+      "backupButtons": 0
+    },
+    {
+      "case": "capacity-recovery-action",
+      "limitMessageVisible": true,
+      "backupButtons": 0
+    }
+  ]
+}
