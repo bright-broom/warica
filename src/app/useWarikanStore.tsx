@@ -9,7 +9,13 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { emptyState, type WarikanState, type PaymentInput, type Result } from '@/lib/types';
+import {
+  emptyState,
+  type WarikanState,
+  type PaymentInput,
+  type Result,
+  type Settlement,
+} from '@/lib/types';
 import {
   loadFromStorage,
   saveToStorage,
@@ -19,6 +25,12 @@ import {
   STORAGE_KEY,
 } from '@/lib/storage';
 import { MAX_MEMBERS, MAX_PAYMENTS, validateMemberName, validatePayment } from '@/lib/validation';
+import {
+  currentSettlements,
+  retainPayPayLinks,
+  settlementKey,
+  validatePayPayUrl,
+} from '@/lib/paypay';
 import { calculateMemberBalances, calculateSettlements } from '@/lib/calculations';
 
 function useStore() {
@@ -70,7 +82,11 @@ function useStore() {
   function commit(next: WarikanState): Result<void> {
     if (!isLoaded || loadBlocked)
       return { ok: false, error: '保存データの読み込みを完了してください。' };
-    const updated = { ...next, lastUpdated: new Date().toISOString() };
+    const updated = {
+      ...next,
+      ...(next.paypayLinks ? { paypayLinks: retainPayPayLinks(next) } : {}),
+      lastUpdated: new Date().toISOString(),
+    };
     if (new Blob([serializeState(updated)]).size > MAX_FILE_SIZE) {
       return {
         ok: false,
@@ -161,6 +177,42 @@ function useStore() {
         ...stateRef.current,
         payments: stateRef.current.payments.filter((p) => p.id !== id),
       });
+    },
+    savePayPayLink(settlement: Settlement, input: string): Result<void> {
+      const current = stateRef.current;
+      const transfer = currentSettlements(current).find(
+        (item) => settlementKey(item) === settlementKey(settlement),
+      );
+      if (!transfer || current.payments.some((payment) => payment.needsReview))
+        return { ok: false, error: '精算内容が変わりました。支払いを確認してください。' };
+      const url = validatePayPayUrl(input);
+      if (!url.ok) return url;
+      return commit({
+        ...current,
+        paypayLinks: [
+          ...(current.paypayLinks ?? []).filter(
+            (item) => settlementKey(item) !== settlementKey(settlement),
+          ),
+          { ...transfer, url: url.data },
+        ],
+      });
+    },
+    removePayPayLink(settlement: Settlement) {
+      return commit({
+        ...stateRef.current,
+        paypayLinks: (stateRef.current.paypayLinks ?? []).filter(
+          (item) => settlementKey(item) !== settlementKey(settlement),
+        ),
+      });
+    },
+    preparePayPayHandoff(settlement: Settlement, url: string): boolean {
+      const current = stateRef.current;
+      const linked = retainPayPayLinks(current).some(
+        (item) => settlementKey(item) === settlementKey(settlement) && item.url === url,
+      );
+      if (!linked || !validatePayPayUrl(url).ok || loadBlocked || !isLoaded) return false;
+      // Recheck storage before leaving, including changes made by another tab.
+      return persist(current);
     },
     resetAll(): Result<void> {
       if (!isLoaded || loadBlocked)

@@ -186,7 +186,7 @@ export function PaymentEditor({
               <Label
                 key={member.id}
                 htmlFor={`participant-${member.id}`}
-                className="relative flex min-h-control max-w-full cursor-pointer items-center gap-2 rounded-control border border-main/15 px-2 py-2 text-sm transition-colors has-data-[state=checked]:border-main/30 has-data-[state=checked]:bg-accent/30 has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-main"
+                className="relative flex min-h-control max-w-full cursor-pointer items-center gap-2 rounded-control border border-main/15 px-2 py-2 text-sm transition-colors has-data-[state=checked]:border-main/30 has-data-[state=checked]:accent-soft has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-main"
               >
                 <Checkbox
                   id={`participant-${member.id}`}

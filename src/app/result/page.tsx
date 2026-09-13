@@ -13,6 +13,7 @@ import {
   ArrowDownLeft,
   ArrowUpRight,
 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { IconAction, IconLink } from '@/components/IconAction';
 import {
   ActionRow,
@@ -26,9 +27,12 @@ import {
   SectionHeader,
   TextArea,
 } from '@/components/ui';
+import { PayPayTransfer } from '@/components/PayPayTransfer';
+import { settlementKey } from '@/lib/paypay';
 import { PaymentHistory } from '@/components/PaymentHistory';
 import { routes } from '@/config/navigation';
 import { useWarikanStore } from '../useWarikanStore';
+import type { Settlement } from '@/lib/types';
 import { settlementText, yen } from '@/lib/calculations';
 
 export default function ResultPage() {
@@ -38,12 +42,18 @@ export default function ResultPage() {
   const [shareText, setShareText] = useState('');
   const [copiedText, setCopiedText] = useState('');
   const text = settlementText(state);
+  function transferText(settlement: Settlement) {
+    const link = state.paypayLinks?.find(
+      (item) => settlementKey(item) === settlementKey(settlement),
+    );
+    return `${state.eventName}\n${settlement.from} → ${settlement.to}：${yen(settlement.amount)}${link ? `\n${link.url}` : ''}`;
+  }
   async function copy(value = text) {
     try {
       await navigator.clipboard.writeText(value);
       setCopiedText(value);
       setShowText(false);
-      setMessage('精算結果をコピーしました。チャットに貼り付けて共有できます。');
+      setMessage('コピーしました。LINEに貼り付けて送れます。');
     } catch {
       setShareText(value);
       setShowText(true);
@@ -87,18 +97,24 @@ export default function ResultPage() {
       <Panel>
         <SectionHeader icon={ArrowRightLeft} title="送金">
           <Badge>{settlements.length}件</Badge>
-          <IconAction
-            label="精算結果をコピー"
-            icon={copiedText === text ? Check : Copy}
-            variant="primary"
-            onClick={() => void copy()}
-          />
         </SectionHeader>
+        <Button
+          className="mb-5 w-full gap-2 rounded-control"
+          aria-label="送金一覧を一括コピー"
+          onClick={() => void copy()}
+        >
+          {copiedText === text ? (
+            <Check className="size-5" aria-hidden="true" />
+          ) : (
+            <Copy className="size-5" aria-hidden="true" />
+          )}
+          一括コピー
+        </Button>
         {settlements.length ? (
           <ol data-testid="transfer-list" className="divide-y divide-main/10">
             {settlements.map((settlement, i) => (
               <li
-                key={`${settlement.fromId}-${settlement.toId}`}
+                key={`${state.eventName}-${settlementKey(settlement)}`}
                 className="grid grid-cols-[1.25rem_minmax(0,1fr)_3rem] items-center gap-x-3 gap-y-2 py-5 first:pt-0 sm:grid-cols-[1.5rem_minmax(0,1fr)_auto_3rem]"
               >
                 <span className="text-xs text-muted-foreground tabular-nums" aria-hidden="true">
@@ -109,24 +125,16 @@ export default function ResultPage() {
                   <ArrowRight size={16} aria-label="から" />
                   <span>{settlement.to}</span>
                 </div>
-                <strong className="col-start-2 w-fit rounded-control bg-accent/25 px-3 py-2 text-lg font-semibold tabular-nums sm:col-start-3">
+                <strong className="col-start-2 w-fit rounded-control accent-soft px-3 py-2 text-lg font-semibold tabular-nums sm:col-start-3">
                   {yen(settlement.amount)}
                 </strong>
                 <IconAction
                   className="col-start-3 sm:col-start-4"
                   label={`${settlement.from}から${settlement.to}への送金をコピー`}
-                  icon={
-                    copiedText ===
-                    `${state.eventName}\n${settlement.from} → ${settlement.to}：${yen(settlement.amount)}`
-                      ? Check
-                      : Copy
-                  }
-                  onClick={() =>
-                    void copy(
-                      `${state.eventName}\n${settlement.from} → ${settlement.to}：${yen(settlement.amount)}`,
-                    )
-                  }
+                  icon={copiedText === transferText(settlement) ? Check : Copy}
+                  onClick={() => void copy(transferText(settlement))}
                 />
+                <PayPayTransfer settlement={settlement} />
               </li>
             ))}
           </ol>
@@ -135,7 +143,7 @@ export default function ResultPage() {
             <h3>精算不要</h3>
           </EmptyState>
         )}
-        <p className={showText ? 'my-4 text-sm leading-6' : 'sr-only'} role="status">
+        <p className={message ? 'my-4 text-sm leading-6' : 'sr-only'} role="status">
           {message}
         </p>
         {showText && (

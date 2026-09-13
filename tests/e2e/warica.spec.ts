@@ -66,7 +66,7 @@ test('complete flow: selected participants, immediate reload, edit, copy fallbac
       value: { writeText: () => Promise.reject(new Error('denied')) },
     }),
   );
-  await page.getByRole('button', { name: '精算結果をコピー' }).click();
+  await page.getByRole('button', { name: '送金一覧を一括コピー' }).click();
   await expect(page.getByLabel('共有用テキスト')).toHaveValue(/はる → あおい：¥3,000/);
 
   await page.getByRole('link', { name: '支払いを追加・編集する' }).click();
@@ -234,14 +234,12 @@ test('clipboard success, deletion cancellation and stale-tab protection', async 
   await page.getByRole('alertdialog').getByRole('button', { name: 'キャンセル' }).click();
   await expect(page.getByTestId('payment-list').locator('li')).toHaveCount(1);
   await page.getByRole('link', { name: '精算結果を見る' }).click();
-  await page.getByRole('button', { name: '精算結果をコピー' }).click();
+  await page.getByRole('button', { name: '送金一覧を一括コピー' }).click();
   await expect(
-    page
-      .getByRole('status')
-      .filter({ hasText: '精算結果をコピーしました。チャットに貼り付けて共有できます。' }),
+    page.getByRole('status').filter({ hasText: 'コピーしました。LINEに貼り付けて送れます。' }),
   ).toBeVisible();
-  expect(await page.evaluate(() => navigator.clipboard.readText())).toContain(
-    'はる → あおい：¥1,000',
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(
+    '週末の京都旅行｜精算結果\n合計 ¥3,000 / 3人 / 1件\n\nはる → あおい：¥1,000\nりく → あおい：¥1,000',
   );
   await page.getByRole('link', { name: 'WARICA ホーム' }).click();
   await expect(page.getByLabel('イベント名', { exact: true })).toHaveValue('週末の京都旅行');
@@ -343,7 +341,7 @@ test('all routes inherit the shared theme and keep a single persistent shell', a
   await add.click();
   await page.getByRole('link', { name: '精算結果を見る' }).click();
   await page.mouse.move(0, 0);
-  await expect(page.getByRole('button', { name: '精算結果をコピー' })).toHaveCSS(
+  await expect(page.getByRole('button', { name: '送金一覧を一括コピー' })).toHaveCSS(
     'background-color',
     inheritedColor,
   );

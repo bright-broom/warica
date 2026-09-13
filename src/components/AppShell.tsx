@@ -145,7 +145,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       inert={menuOpen || undefined}
     >
       <a
-        className="sr-only z-50 rounded-control bg-accent p-4 focus:not-sr-only focus:fixed focus:top-4"
+        className="sr-only z-50 rounded-control accent-surface p-4 focus:not-sr-only focus:fixed focus:top-4"
         href="#main"
       >
         本文へ移動
@@ -156,7 +156,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           className="flex items-center gap-3 text-3xl font-bold tracking-tight"
           aria-label="WARICA ホーム"
         >
-          <span className="flex size-10 items-center justify-center rounded-control bg-accent">
+          <span className="flex size-10 items-center justify-center rounded-control accent-surface">
             <Split size={22} strokeWidth={2.5} aria-hidden="true" />
           </span>
           <span>
@@ -228,7 +228,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 const active = path === step.href;
                 const style = cx(
                   'flex h-14 w-full items-center justify-center rounded-control transition-colors',
-                  active ? 'bg-accent text-main' : 'text-muted-foreground hover:bg-main/5',
+                  active ? 'accent-surface text-main' : 'text-muted-foreground hover:bg-main/5',
                 );
                 return (
                   <li key={step.href}>

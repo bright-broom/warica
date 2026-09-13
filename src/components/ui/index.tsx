@@ -25,7 +25,7 @@ import { Empty, EmptyMedia, EmptyContent } from './empty';
 export const cx = cn;
 const panelTones = {
   default: 'border-main/10 bg-sub',
-  soft: 'border-accent/30 bg-accent/15',
+  soft: 'border-accent/30 accent-faint',
   inverse: 'border-main bg-main text-sub',
 };
 export function Panel({
@@ -80,7 +80,7 @@ export function Badge({ children, className, ...props }: HTMLAttributes<HTMLSpan
 export function Avatar({ name }: { name: string }) {
   return (
     <AvatarPrimitive aria-hidden="true" className="size-9 shrink-0 ring-2 ring-sub">
-      <AvatarFallback className="bg-accent/35 text-sm font-semibold text-main">
+      <AvatarFallback className="accent-soft text-sm font-semibold text-main">
         {Array.from(name)[0] || '?'}
       </AvatarFallback>
     </AvatarPrimitive>
@@ -91,7 +91,7 @@ const fieldStyle =
 const inputVariants = {
   default: '',
   amount:
-    'h-20 border-main/10 bg-accent/10 pl-10 pr-3 text-3xl font-semibold tracking-tight tabular-nums sm:text-4xl',
+    'h-20 border-main/10 accent-faint pl-10 pr-3 text-3xl font-semibold tracking-tight tabular-nums sm:text-4xl',
 };
 export function TextInput({
   className,
@@ -146,7 +146,7 @@ export function Notice({ children, alert = false }: { children: ReactNode; alert
   return (
     <Alert
       role={alert ? 'alert' : 'status'}
-      className="grid-cols-[1.25rem_minmax(0,1fr)] gap-3 rounded-control border-main/20 bg-accent/15 p-4 text-main"
+      className="grid-cols-[1.25rem_minmax(0,1fr)] gap-3 rounded-control border-main/20 accent-faint p-4 text-main"
     >
       <TriangleAlert size={19} aria-hidden="true" />
       <AlertDescription className="block min-w-0 text-sm leading-6 text-main wrap-anywhere">
