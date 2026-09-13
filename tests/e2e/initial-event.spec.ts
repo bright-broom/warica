@@ -1,3 +1,4 @@
+import { goToStep } from './page-arrows';
 import { expect, test } from '@playwright/test';
 
 test('first use needs only an amount, preserves the unsaved draft on reload, and settles A and B', async ({
@@ -27,7 +28,7 @@ test('first use needs only an amount, preserves the unsaved draft on reload, and
   await expect(
     page.getByRole('button', { name: 'BからAへの送金をコピー', exact: true }),
   ).toBeVisible();
-  await page.getByRole('link', { name: 'メンバー', exact: true }).click();
+  await goToStep(page, '/');
   await page.getByLabel('イベント名', { exact: true }).fill('京都旅行');
   await page.getByRole('button', { name: 'Aの名前を編集', exact: true }).click();
   await page.getByLabel('新しい名前').fill('あおい');

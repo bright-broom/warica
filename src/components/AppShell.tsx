@@ -11,6 +11,7 @@ import {
   Users,
   Wallet,
   ArrowRight,
+  ArrowLeft,
   RefreshCw,
 } from 'lucide-react';
 import { usePaymentWorkspace } from './PaymentWorkspace';
@@ -166,13 +167,9 @@ export function AppShell({ children }: { children: ReactNode }) {
           }}
         />
       </header>
-      <div className="grid min-h-0 items-start gap-6 max-lg:flex-1 max-lg:grid-rows-[minmax(0,1fr)] max-lg:pb-[calc(5.5rem+env(safe-area-inset-bottom))] lg:grid-cols-[12rem_minmax(0,1fr)] lg:gap-12">
-        <aside className="contents lg:sticky lg:top-8 lg:block lg:min-w-0">
-          <nav
-            data-ui="navigation"
-            aria-label="割り勘の手順"
-            className="fixed right-4 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-40 w-[10.5rem] rounded-panel backdrop-blur-lg lg:static lg:w-full"
-          >
+      <div className="grid min-h-0 items-start gap-6 max-lg:flex-1 max-lg:grid-rows-[minmax(0,1fr)] lg:grid-cols-[12rem_minmax(0,1fr)] lg:gap-12">
+        <aside className="hidden lg:sticky lg:top-8 lg:block lg:min-w-0">
+          <nav data-ui="navigation" aria-label="割り勘の手順" className="w-full rounded-panel">
             <ol className="grid grid-cols-3 gap-1 lg:gap-2">
               {steps.map((step) => {
                 const active = path === step.href;
@@ -244,7 +241,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           ref={mainRef}
           id="main"
           tabIndex={-1}
-          className="min-h-0 min-w-0 space-y-4 scroll-pt-4 scroll-pb-6 pb-6 max-lg:h-full max-lg:overflow-y-auto sm:space-y-5 lg:pb-8"
+          className="min-h-0 min-w-0 space-y-4 scroll-pt-4 scroll-pb-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] max-lg:h-full max-lg:overflow-y-auto sm:space-y-5 lg:pb-8"
         >
           {(storageError || workspace.storageError) && (
             <Notice alert>
@@ -296,6 +293,9 @@ export function AppShell({ children }: { children: ReactNode }) {
             <EmptyState icon={ShieldCheck}>
               <h1>下書きを確認してください</h1>
               <p>保存を再試行すると入力を再開できます。</p>
+              {path !== routes.members && (
+                <IconLink href={routes.members} label="メンバーに戻る" icon={ArrowLeft} />
+              )}
             </EmptyState>
           ) : current && !current.ready && current.blockedTitle ? (
             <EmptyState icon={current.icon}>

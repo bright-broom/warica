@@ -79,7 +79,7 @@
 
 @layer base {
   html {
-    @apply bg-sub text-main font-sans antialiased scroll-pt-4 scroll-pb-28 lg:scroll-pb-8;
+    @apply bg-sub text-main font-sans antialiased scroll-pt-4 scroll-pb-6 lg:scroll-pb-8;
   }
   body {
     @apply min-w-0;

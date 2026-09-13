@@ -1,3 +1,4 @@
+import { goToStep } from './page-arrows';
 import { savedEmptyEvent } from './saved-empty-event';
 import { expect, test, type Page } from '@playwright/test';
 import { serializeState } from '../../src/lib/storage';
@@ -252,7 +253,7 @@ test('clipboard success, deletion cancellation and stale-tab protection', async 
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(
     '週末の京都旅行｜精算結果\n合計 ¥3,000 / 3人 / 1件\n\nはる → あおい：¥1,000\nりく → あおい：¥1,000',
   );
-  await page.getByRole('link', { name: 'メンバー', exact: true }).click();
+  await goToStep(page, '/');
   await expect(page.getByLabel('イベント名', { exact: true })).toHaveValue('週末の京都旅行');
   const stale = await context.newPage();
   await stale.goto('/');
@@ -320,7 +321,7 @@ test('a user-confirmed backup can recover an otherwise unreadable event', async 
   await expect(page.getByTestId('member-list').locator('li')).toHaveCount(3);
   await page.reload();
   await expect(page.getByLabel('イベント名', { exact: true })).toHaveValue('週末の京都旅行');
-  await page.getByRole('link', { name: '支払い', exact: true }).click();
+  await goToStep(page, '/payments');
   await expect(page.getByLabel('金額', { exact: true })).toHaveValue('');
 });
 
@@ -360,7 +361,7 @@ test('all routes inherit the shared theme and keep a single persistent shell', a
   );
   await expect(page.getByTestId('app-shell')).toHaveAttribute('data-persisted', 'yes');
   await expect(page.getByRole('main')).toHaveCount(1);
-  await page.getByRole('link', { name: 'メンバー', exact: true }).click();
+  await goToStep(page, '/');
   await expect(page.getByTestId('app-shell')).toHaveAttribute('data-persisted', 'yes');
   await expect(page.getByLabel('イベント名', { exact: true })).toHaveValue('週末の京都旅行');
 });
@@ -375,8 +376,8 @@ test('payment drafts survive route changes and continuous entry keeps payer and 
       .getByRole('button', { name: 'この支払いを追加する' })
       .evaluate((element) => element.scrollIntoView({ block: 'center' }));
     const submit = await page.getByRole('button', { name: 'この支払いを追加する' }).boundingBox();
-    const dock = await page.getByRole('navigation', { name: '割り勘の手順' }).boundingBox();
-    expect(submit && dock && submit.y + submit.height <= dock.y).toBeTruthy();
+    await expect(page.getByRole('navigation', { name: '割り勘の手順' })).toBeHidden();
+    expect(submit && submit.y + submit.height <= page.viewportSize()!.height).toBeTruthy();
   }
   await page.getByLabel('支払った人').selectOption({ label: 'はる' });
   await page.getByLabel('金額', { exact: true }).fill('１２，８００');
@@ -385,8 +386,8 @@ test('payment drafts survive route changes and continuous entry keeps payer and 
   await expect(page.getByLabel('何の支払い？')).toBeFocused();
   await page.getByLabel('宿泊', { exact: true }).click();
   await page.getByRole('checkbox', { name: 'りく', exact: true }).uncheck();
-  await page.getByRole('link', { name: 'メンバー', exact: true }).click();
-  await page.getByRole('link', { name: '支払い', exact: true }).click();
+  await goToStep(page, '/');
+  await goToStep(page, '/payments');
   await expect(page).toHaveURL(/\/payments$/);
   await page.reload();
   await expect(page.getByLabel('金額', { exact: true })).toHaveValue('12800');
@@ -404,8 +405,8 @@ test('payment drafts survive route changes and continuous entry keeps payer and 
   await page.getByLabel('何の支払い？').fill('次の支払い');
   await page.getByRole('button', { name: '宿泊を編集', exact: true }).click();
   await page.getByLabel('金額', { exact: true }).fill('12000');
-  await page.getByRole('link', { name: '精算結果', exact: true }).click();
-  await page.getByRole('link', { name: '支払い', exact: true }).click();
+  await goToStep(page, '/result');
+  await goToStep(page, '/payments');
   await refresh(page);
   await expect(page.getByLabel('金額', { exact: true })).toHaveValue('12000');
   await page.getByRole('button', { name: '編集をキャンセル', exact: true }).click();
@@ -420,6 +421,7 @@ test('replacing an event clears drafts and individual transfers can be copied wi
   page,
   context,
   browserName,
+  isMobile,
 }) => {
   // WebKit writes from the click gesture; it only exposes a clipboard-read permission.
   await context.grantPermissions(
@@ -437,11 +439,13 @@ test('replacing an event clears drafts and individual transfers can be copied wi
     .getByRole('alertdialog')
     .getByRole('button', { name: '読み込む', exact: true })
     .click();
-  await page.getByRole('link', { name: '支払い', exact: true }).click();
+  // Import returns to members asynchronously; wait before choosing the next arrow.
+  await expect(page).toHaveURL(/\/$/);
+  await goToStep(page, '/payments');
   await expect(page.getByLabel('金額', { exact: true })).toHaveValue('');
   await page.getByLabel('金額', { exact: true }).fill('3000');
   await page.getByRole('button', { name: 'この支払いを追加する' }).click();
-  await page.getByRole('link', { name: '精算結果', exact: true }).click();
+  await goToStep(page, '/result');
   await page.getByRole('button', { name: 'はるからあおいへの送金をコピー' }).click();
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(
     '週末の京都旅行\nはる → あおい：¥1,000',
@@ -456,7 +460,7 @@ test('replacing an event clears drafts and individual transfers can be copied wi
   await expect(page.getByLabel('共有用テキスト')).toHaveValue(
     '週末の京都旅行\nりく → あおい：¥1,000',
   );
-  await page.getByRole('link', { name: '支払い', exact: true }).click();
+  await goToStep(page, '/payments');
   await page.getByLabel('金額', { exact: true }).fill('800');
   await offerBackup(page, serializeState(emptyState()));
   await page
@@ -468,13 +472,15 @@ test('replacing an event clears drafts and individual transfers can be copied wi
     await page.getByLabel('メンバーの名前', { exact: true }).fill(name);
     await page.getByRole('button', { name: '追加', exact: true }).click();
   }
-  await page.getByRole('link', { name: '支払い', exact: true }).click();
+  await goToStep(page, '/payments');
   await expect(page).toHaveURL(/\/payments$/);
   await page.reload();
   await expect(page.getByLabel('金額', { exact: true })).toHaveValue('');
   await expect(page.locator('footer')).toHaveCount(0);
   await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-  await expect(page.getByRole('navigation', { name: '割り勘の手順' })).toBeInViewport();
+  const navigation = page.getByRole('navigation', { name: '割り勘の手順' });
+  if (isMobile) await expect(navigation).toBeHidden();
+  else await expect(navigation).toBeInViewport();
   await noOverflow(page);
 });
 
@@ -551,8 +557,8 @@ test('refresh keeps data and failed draft saves retain inputs until retry', asyn
   await refresh(page);
   await expect(page.locator('html')).toHaveAttribute('data-before-refresh', 'yes');
   await expect(page.getByLabel('金額', { exact: true })).toHaveValue('1.5');
-  await page.getByRole('link', { name: 'メンバー', exact: true }).click();
-  await page.getByRole('link', { name: '支払い', exact: true }).click();
+  await goToStep(page, '/');
+  await goToStep(page, '/payments');
   await expect(page.getByLabel('何の支払い？')).toHaveValue('まだ入力途中');
   await page.evaluate(() => (window as unknown as { __restoreDraft: () => void }).__restoreDraft());
   await refresh(page);
@@ -582,14 +588,14 @@ test('unreadable draft storage can be retried without overwriting the saved draf
   await page.reload();
   await expect(page.getByRole('heading', { name: '下書きを確認してください' })).toBeVisible();
   await expect(page.getByLabel('金額', { exact: true })).toHaveCount(0);
-  await page.getByRole('link', { name: 'メンバー', exact: true }).click();
+  await goToStep(page, '/');
   await expect(page).toHaveURL(/\/$/);
   await expect(page.getByLabel('イベント名', { exact: true })).toHaveCount(0);
   await page.evaluate(() =>
     (window as unknown as { __restoreDraftRead: () => void }).__restoreDraftRead(),
   );
   await page.getByRole('button', { name: '保存を再試行' }).click();
-  await page.getByRole('link', { name: '支払い', exact: true }).click();
+  await goToStep(page, '/payments');
   await expect(page.getByLabel('金額', { exact: true })).toHaveValue('750');
   await expect(page.locator('main [role=alert]')).toHaveCount(0);
 });
@@ -601,7 +607,7 @@ test('mobile actions stay in the right half with usable touch targets', async ({
   test.skip(!isMobile, 'Right hand layout applies to phones.');
   async function rightHandActions() {
     const controls = page.locator(
-      'button:visible, [role="checkbox"]:visible, [role="radio"]:visible, nav a:visible, a[data-slot="button"]:visible',
+      'button:visible, [role="checkbox"]:visible, [role="radio"]:visible, a[data-ui="button"]:visible',
     );
     const targets = await controls.evaluateAll((elements) =>
       elements.map((element) => ({
@@ -621,16 +627,18 @@ test('mobile actions stay in the right half with usable touch targets', async ({
   }
   await setup(page);
   const main = await page.getByRole('main').boundingBox();
-  const dock = await page.getByRole('navigation', { name: '割り勘の手順' }).boundingBox();
-  expect(main && dock && main.y + main.height <= dock.y).toBeTruthy();
+  await expect(page.getByRole('navigation', { name: '割り勘の手順' })).toBeHidden();
+  expect(main).not.toBeNull();
+  expect(main!.y + main!.height).toBeGreaterThan(page.viewportSize()!.height - 32);
+  expect(main!.y + main!.height).toBeLessThanOrEqual(page.viewportSize()!.height);
   await rightHandActions();
-  await page.getByRole('link', { name: 'メンバー', exact: true }).click();
+  await goToStep(page, '/');
   await expect(page.getByLabel('メンバーの名前', { exact: true })).toBeVisible();
   await rightHandActions();
   await page.getByRole('button', { name: 'あおいの名前を編集' }).click();
   await rightHandActions();
   await page.getByRole('button', { name: '編集をキャンセル' }).click();
-  await page.getByRole('link', { name: '支払い', exact: true }).click();
+  await goToStep(page, '/payments');
   await page.getByLabel('金額', { exact: true }).fill('3000');
   await page.getByRole('button', { name: 'この支払いを追加する' }).click();
   await rightHandActions();
@@ -661,9 +669,9 @@ for (const failure of ['quota', 'stale'] as const) {
   }) => {
     await setup(page);
     const imported = await page.evaluate((storageKey) => localStorage.getItem(storageKey)!, key);
-    await page.getByRole('link', { name: 'メンバー', exact: true }).click();
+    await goToStep(page, '/');
     await page.getByLabel('イベント名', { exact: true }).fill('現在のイベント');
-    await page.getByRole('link', { name: '支払い', exact: true }).click();
+    await goToStep(page, '/payments');
     await page.getByLabel('金額', { exact: true }).fill('3000');
     await page.getByLabel('何の支払い？').fill('登録済み');
     await page.getByRole('button', { name: 'この支払いを追加する' }).click();
@@ -702,7 +710,7 @@ for (const failure of ['quota', 'stale'] as const) {
     );
     expect(await page.evaluate((storageKey) => localStorage.getItem(storageKey), key)).toBe(latest);
     await expect(page.getByText('バックアップを読み込みました。', { exact: true })).toHaveCount(0);
-    await page.getByRole('link', { name: 'メンバー', exact: true }).click();
+    await goToStep(page, '/');
     await expect(page.getByLabel('イベント名', { exact: true })).toHaveValue('現在のイベント');
     if (failure === 'quota') {
       await page.evaluate(() =>
@@ -711,7 +719,7 @@ for (const failure of ['quota', 'stale'] as const) {
       await page.getByRole('button', { name: '保存を再試行' }).click();
       await page.reload();
       await expect(page.getByLabel('イベント名', { exact: true })).toHaveValue('現在のイベント');
-      await page.getByRole('link', { name: '支払い', exact: true }).click();
+      await goToStep(page, '/payments');
       await expect(page.getByLabel('金額', { exact: true })).toHaveValue('777');
       await page.getByLabel('バックアップファイル').setInputFiles({
         name: 'backup.json',
@@ -724,7 +732,7 @@ for (const failure of ['quota', 'stale'] as const) {
         .click();
       await expect(page.getByLabel('イベント名', { exact: true })).toHaveValue('週末の京都旅行');
       await page.reload();
-      await page.getByRole('link', { name: '支払い', exact: true }).click();
+      await goToStep(page, '/payments');
       await expect(page.getByLabel('金額', { exact: true })).toHaveValue('');
       await expect(page.getByTestId('payment-list')).toHaveCount(0);
     }
@@ -773,7 +781,7 @@ test('backup recovery invalidates old drafts even when session storage cannot be
   expect(restoredStamp).not.toBe(JSON.parse(backup).data.lastUpdated);
   page.once('dialog', (dialog) => dialog.accept());
   await page.reload();
-  await page.getByRole('link', { name: '支払い', exact: true }).click();
+  await goToStep(page, '/payments');
   await expect(page.getByLabel('金額', { exact: true })).toHaveValue('');
   await expect(page.locator('main [role=alert]')).toHaveCount(0);
 });
@@ -810,9 +818,9 @@ test('a storage conflict can be cancelled or resolved using the latest saved eve
   const other = await context.newPage();
   await other.goto('/');
   await other.getByLabel('イベント名', { exact: true }).fill('別タブのイベント');
-  await page.getByRole('link', { name: 'メンバー', exact: true }).click();
+  await goToStep(page, '/');
   await page.getByLabel('イベント名', { exact: true }).fill('このタブの未保存変更');
-  await page.getByRole('link', { name: '支払い', exact: true }).click();
+  await goToStep(page, '/payments');
   const draft = await page.evaluate(() => sessionStorage.getItem('warica-payment-draft-v1'));
   await expect(page.locator('main [role=alert]')).toContainText('別の画面');
   await refresh(page);
@@ -830,7 +838,7 @@ test('a storage conflict can be cancelled or resolved using the latest saved eve
   await expect(page.getByLabel('イベント名', { exact: true })).toHaveValue('確認中の最新更新');
   expect(await page.evaluate((storageKey) => localStorage.getItem(storageKey), key)).toBe(latest);
   await expect(page.locator('main [role=alert]')).toHaveCount(0);
-  await page.getByRole('link', { name: '支払い', exact: true }).click();
+  await goToStep(page, '/payments');
   await expect(page.getByLabel('金額', { exact: true })).toHaveValue('');
   await page.reload();
   await expect(page.getByLabel('金額', { exact: true })).toHaveValue('');
@@ -904,7 +912,7 @@ for (const failure of ['unreadable', 'draft-deletion'] as const) {
 
 test('recovery on the member page clears unsubmitted member edits', async ({ page, context }) => {
   await setup(page);
-  await page.getByRole('link', { name: 'メンバー', exact: true }).click();
+  await goToStep(page, '/');
   await page.getByLabel('メンバーの名前', { exact: true }).fill('追加前の名前');
   await page.getByRole('button', { name: 'あおいの名前を編集', exact: true }).click();
   await page.getByLabel('新しい名前', { exact: true }).fill('変更前の下書き');
