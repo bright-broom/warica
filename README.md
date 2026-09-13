@@ -1,5 +1,7 @@
 # WARICA
 
+> **AI・開発者の引き継ぎ入口：** [AGENTS.md](AGENTS.md) → [確認済み状態](docs/STATUS.md) → [残課題・完了条件](docs/BACKLOG.md)。作業前にこの順で確認してください。
+
 **楽しい時間の、そのあとに。**
 
 旅行や食事の立て替えを記録し、**誰が・誰に・いくら送るか**を整理する、日本語の割り勘アプリです。初回は「みんなでごはん」とメンバー「A・B」が入っているので、そのまま金額の入力から始められます。
@@ -400,6 +402,9 @@ flowchart TB
 定義は[GitHub Actions](.github/workflows/ci.yml)、ブラウザ構成は[`playwright.config.ts`](playwright.config.ts)を参照してください。CIは2ワーカー、失敗時の再試行は1回です。ローカルの既定では再試行しません。CI成功と公開サイト・実機での動作確認は別々に扱います。
 
 ## 関連ドキュメント
+
+- [確認済み状態](docs/STATUS.md)：検証対象・日時・結果・未確認の範囲
+- [残課題](docs/BACKLOG.md)：WAR-ID、優先度、状態、再現条件、完了条件
 
 - [デザイン管理ガイド](docs/DESIGN_SYSTEM.md)：色・共通部品・画面構成の変更方法
 - [保存性能の計測](docs/STORAGE_PERFORMANCE.md)：計測条件、ブラウザI/Oを含む範囲との違い
