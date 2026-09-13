@@ -1,5 +1,6 @@
 'use client';
 import Link from 'next/link';
+import { toast } from 'sonner';
 import { usePathname, useRouter } from 'next/navigation';
 import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react';
 import {
@@ -36,7 +37,6 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { state, isLoaded, loadBlocked, storageError, storageConflict, notice, total } = store;
   const inputRef = useRef<HTMLInputElement>(null);
   const [message, setMessage] = useState('');
-  const allowReload = useRef(false);
   const steps = navigation(state);
   const current = steps.find((step) => step.href === path);
   useEffect(() => {
@@ -45,7 +45,6 @@ export function AppShell({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!storageError && !workspace.storageError) return;
     const protect = (event: BeforeUnloadEvent) => {
-      if (allowReload.current) return;
       event.preventDefault();
       event.returnValue = '';
     };
@@ -77,12 +76,24 @@ export function AppShell({ children }: { children: ReactNode }) {
       await loadLatest();
       return;
     }
-    const saved = store.retryStorage();
-    const draftSaved = workspace.retryStorage();
-    if (saved && draftSaved) {
-      allowReload.current = true;
-      window.location.reload();
-    }
+    if (
+      !(await confirm({
+        title: '支払いをリセット',
+        description:
+          '支払い履歴・精算結果・入力中の下書きを消します。イベント名とメンバーは残ります。',
+        action: 'リセットする',
+        icon: RefreshCw,
+      }))
+    )
+      return;
+    const result = store.resetPayments();
+    setMessage(result.ok ? '' : result.error);
+    if (!result.ok) return;
+    const ready = navigation(store.getCurrentState()).find(
+      (step) => step.href === routes.payments,
+    )!.ready;
+    router.push(ready ? routes.payments : routes.members);
+    toast.success('支払いをリセットしました');
   }
   function download() {
     const url = URL.createObjectURL(

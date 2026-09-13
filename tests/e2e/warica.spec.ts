@@ -93,6 +93,10 @@ test('complete flow: selected participants, immediate reload, edit, copy fallbac
 
   await denyLocalWrites(page);
   await refresh(page);
+  await page
+    .getByRole('alertdialog')
+    .getByRole('button', { name: 'リセットする', exact: true })
+    .click();
   await expect(page.locator('main [role=alert]')).toContainText('保存できません');
   const downloading = page.waitForEvent('download');
   await page.getByRole('button', { name: 'バックアップ', exact: true }).click();
@@ -407,7 +411,7 @@ test('payment drafts survive route changes and continuous entry keeps payer and 
   await page.getByLabel('金額', { exact: true }).fill('12000');
   await goToStep(page, '/result');
   await goToStep(page, '/payments');
-  await refresh(page);
+  await page.reload();
   await expect(page.getByLabel('金額', { exact: true })).toHaveValue('12000');
   await page.getByRole('button', { name: '編集をキャンセル', exact: true }).click();
   await expect(page.getByLabel('金額', { exact: true })).toHaveValue('500');
@@ -533,7 +537,9 @@ test('shadcn controls support keyboard selection, help, tooltips and safe confir
   await noOverflow(page);
 });
 
-test('refresh keeps data and failed draft saves retain inputs until retry', async ({ page }) => {
+test('failed draft saves preserve inputs through cancelled reset and storage retry', async ({
+  page,
+}) => {
   await setup(page);
   await expect(page.locator('footer')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'バックアップ', exact: true })).toHaveCount(0);
@@ -555,13 +561,19 @@ test('refresh keeps data and failed draft saves retain inputs until retry', asyn
   await page.getByLabel('何の支払い？').fill('まだ入力途中');
   await expect(page.locator('main [role=alert]')).toContainText('下書きを保存できません');
   await refresh(page);
+  await page
+    .getByRole('alertdialog')
+    .getByRole('button', { name: 'キャンセル', exact: true })
+    .click();
   await expect(page.locator('html')).toHaveAttribute('data-before-refresh', 'yes');
   await expect(page.getByLabel('金額', { exact: true })).toHaveValue('1.5');
   await goToStep(page, '/');
   await goToStep(page, '/payments');
   await expect(page.getByLabel('何の支払い？')).toHaveValue('まだ入力途中');
   await page.evaluate(() => (window as unknown as { __restoreDraft: () => void }).__restoreDraft());
-  await refresh(page);
+  await page.getByRole('button', { name: '保存を再試行', exact: true }).click();
+  await expect(page.locator('main [role=alert]')).toHaveCount(0);
+  await page.reload();
   await expect(page.locator('html')).not.toHaveAttribute('data-before-refresh', 'yes');
   await expect(page.getByLabel('金額', { exact: true })).toHaveValue('1.5');
   await expect(page.getByLabel('何の支払い？')).toHaveValue('まだ入力途中');
@@ -786,7 +798,7 @@ test('backup recovery invalidates old drafts even when session storage cannot be
   await expect(page.locator('main [role=alert]')).toHaveCount(0);
 });
 
-test('a failed refresh keeps the event and both new and editing drafts', async ({ page }) => {
+test('a failed payment reset keeps the event and both new and editing drafts', async ({ page }) => {
   await setup(page);
   await page.getByLabel('金額', { exact: true }).fill('3000');
   await page.getByLabel('何の支払い？').fill('ランチ');
@@ -798,6 +810,10 @@ test('a failed refresh keeps the event and both new and editing drafts', async (
   const draft = await page.evaluate(() => sessionStorage.getItem('warica-payment-draft-v1'));
   await denyLocalWrites(page);
   await refresh(page);
+  await page
+    .getByRole('alertdialog')
+    .getByRole('button', { name: 'リセットする', exact: true })
+    .click();
   await expect(page.locator('main [role=alert]')).toContainText('保存できません');
   await expect(page).toHaveURL(/\/payments$/);
   await expect(page.getByLabel('金額', { exact: true })).toHaveValue('1234');
