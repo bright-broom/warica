@@ -57,6 +57,20 @@
   --spacing-control: 3rem;
 }
 
+/* Three intensities of the same shared mint gradient. Solid colors are fallbacks. */
+@utility accent-surface {
+  background-color: var(--brand-accent);
+  background-image: var(--brand-accent-gradient);
+}
+@utility accent-soft {
+  background-color: color-mix(in srgb, var(--brand-accent) 28%, var(--brand-sub));
+  background-image: var(--brand-accent-soft);
+}
+@utility accent-faint {
+  background-color: color-mix(in srgb, var(--brand-accent) 10%, var(--brand-sub));
+  background-image: var(--brand-accent-faint);
+}
+
 @layer base {
   html {
     @apply bg-sub text-main font-sans antialiased scroll-pt-4 scroll-pb-28 lg:scroll-pb-8;

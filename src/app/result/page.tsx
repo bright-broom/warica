@@ -125,7 +125,7 @@ export default function ResultPage() {
                   <ArrowRight size={16} aria-label="から" />
                   <span>{settlement.to}</span>
                 </div>
-                <strong className="col-start-2 w-fit rounded-control bg-accent/25 px-3 py-2 text-lg font-semibold tabular-nums sm:col-start-3">
+                <strong className="col-start-2 w-fit rounded-control accent-soft px-3 py-2 text-lg font-semibold tabular-nums sm:col-start-3">
                   {yen(settlement.amount)}
                 </strong>
                 <IconAction

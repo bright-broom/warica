@@ -15,7 +15,7 @@ type IconProps = {
   size?: 'default' | 'large';
 };
 const style =
-  'border border-transparent aria-pressed:bg-accent/25 aria-pressed:text-main disabled:cursor-not-allowed disabled:opacity-30';
+  'border border-transparent aria-pressed:accent-soft aria-pressed:text-main disabled:cursor-not-allowed disabled:opacity-30';
 export function IconAction({
   label,
   icon: Icon,

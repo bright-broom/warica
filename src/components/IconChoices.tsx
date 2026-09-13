@@ -31,7 +31,7 @@ export function IconChoices({
             <ToggleGroupItem
               value={label}
               aria-label={label}
-              className="h-12 w-12 min-w-12 rounded-control p-0 aria-checked:bg-accent/25 aria-checked:text-main aria-pressed:bg-accent/25 aria-pressed:text-main"
+              className="h-12 w-12 min-w-12 rounded-control p-0 aria-checked:accent-soft aria-checked:text-main aria-pressed:accent-soft aria-pressed:text-main"
             >
               <Icon className="size-5" aria-hidden="true" />
             </ToggleGroupItem>

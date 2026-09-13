@@ -20,7 +20,9 @@ Tailwind CSS 4.3、shadcn/ui（Radix）、Lucideで3画面を管理します。�
 - `sub`: 淡いオフホワイト。ページ・カード・入力欄の背景。
 - `accent`: ミントブルーグリーン。主要操作・選択状態・強調面。
 
-色コードは `theme.ts` だけに記載します。`RootLayout` がCSS変数として渡し、Tailwindの `bg-accent`、`text-main` などで参照します。淡い面や区切り線は `bg-accent/15`、`border-main/10` のような3色の透明度から作ります。透過と継承を除き、追加の基本色は使いません。Tailwind標準の色パレットは無効にしています。
+色コードは `theme.ts` だけに記載します。`RootLayout` がCSS変数として渡し、Tailwindの `text-main` などで参照します。アクセントの面は同じ3色から派生させたミントのグラデーションを使い、主要操作には `accent-surface`、選択状態には `accent-soft`、入力・通知には `accent-faint` を指定します。区切り線は `border-main/10` のように透明度で調整します。追加の基本色は使いません。Tailwind標準の色パレットは無効にしています。
+
+グラデーションの色・方向・濃度は `theme.ts` の共通変数で管理します。アクセントから色相を24度グリーン側に寄せ、サブ色と混ぜた淡いミントから青緑へ135度の方向につなげています。[CSSの相対色](https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Colors/Using_relative_colors)を使用し、非対応環境では単色の背景が残ります。文字・アイコン・背景の基本色は変更していません。
 
 補助文字・入力のプレースホルダーには `text-muted-foreground` を使い、`globals.css` の共通変数で濃度を管理します。標準背景上で小さい文字も4.5:1以上のコントラストを確保するため、メイン色75%とサブ色25%を混合しています。個別の文字に薄い透明度を追加しないでください。
 
