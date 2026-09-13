@@ -1,4 +1,7 @@
 import { defineConfig } from '@playwright/test';
+
+const externalURL = process.env.PLAYWRIGHT_BASE_URL;
+const baseURL = externalURL || 'http://127.0.0.1:3100';
 export default defineConfig({
   testDir: './tests/e2e',
   fullyParallel: true,
@@ -7,7 +10,7 @@ export default defineConfig({
   workers: process.env.CI ? 2 : undefined,
   reporter: 'list',
   use: {
-    baseURL: 'http://127.0.0.1:3100',
+    baseURL,
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
   },
@@ -23,9 +26,11 @@ export default defineConfig({
       },
     },
   ],
-  webServer: {
-    command: 'pnpm start --hostname 127.0.0.1 --port 3100',
-    url: 'http://127.0.0.1:3100',
-    reuseExistingServer: !process.env.CI,
-  },
+  webServer: externalURL
+    ? undefined
+    : {
+        command: 'pnpm start --hostname 127.0.0.1 --port 3100',
+        url: 'http://127.0.0.1:3100',
+        reuseExistingServer: !process.env.CI,
+      },
 });

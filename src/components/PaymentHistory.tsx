@@ -34,7 +34,7 @@ export function PaymentHistory({
                 className="grid min-w-0 grid-cols-[2.25rem_minmax(0,1fr)] items-start gap-3 py-5 first:pt-0 last:pb-0 sm:grid-cols-[2.25rem_minmax(0,1fr)_auto]"
               >
                 <Avatar name={payer?.name ?? '?'} />
-                <div className="min-w-0 space-y-2 text-xs text-main/65 wrap-anywhere">
+                <div className="min-w-0 space-y-2 text-xs text-muted-foreground wrap-anywhere">
                   <h3 className="text-sm font-semibold text-main">{payment.memo || '立て替え'}</h3>
                   <p className="flex items-start gap-2">
                     <Wallet size={13} className="mt-0.5" aria-hidden="true" />

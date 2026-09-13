@@ -13,7 +13,7 @@
   --secondary: var(--brand-sub);
   --secondary-foreground: var(--brand-main);
   --muted: var(--brand-sub);
-  --muted-foreground: color-mix(in srgb, var(--brand-main) 65%, var(--brand-sub));
+  --muted-foreground: color-mix(in srgb, var(--brand-main) 75%, var(--brand-sub));
   --accent-foreground: var(--brand-main);
   --destructive: var(--brand-main);
   --destructive-foreground: var(--brand-sub);

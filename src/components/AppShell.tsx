@@ -122,7 +122,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </span>
         </Link>
         <span
-          className="flex size-control items-center justify-center text-main/60"
+          className="flex size-control items-center justify-center text-muted-foreground"
           role="status"
           title={saveLabel}
         >
@@ -147,7 +147,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 const active = path === step.href;
                 const style = cx(
                   'flex h-14 w-full items-center justify-center rounded-control transition-colors',
-                  active ? 'bg-accent text-main' : 'text-main/55 hover:bg-main/5',
+                  active ? 'bg-accent text-main' : 'text-muted-foreground hover:bg-main/5',
                 );
                 return (
                   <li key={step.href}>
@@ -196,7 +196,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 </dt>
                 <dd>
                   {state.members.length}
-                  <span className="ml-1 text-xs text-main/60">人</span>
+                  <span className="ml-1 text-xs text-muted-foreground">人</span>
                 </dd>
               </div>
               <div className="flex items-center justify-between gap-2">
@@ -275,7 +275,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               onChange={(e) => void importFile(e.target.files?.[0])}
             />
             <p
-              className="mt-2 text-center text-xs leading-6 text-main/70 wrap-anywhere"
+              className="mt-2 text-center text-xs leading-6 text-muted-foreground wrap-anywhere"
               role="status"
             >
               {message}

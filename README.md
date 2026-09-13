@@ -35,14 +35,19 @@ pnpm lint       # ESLint（警告もエラーにする）
 pnpm typecheck  # Next.jsのルート型生成とTypeScriptチェック
 pnpm test       # 計算・バリデーション・保存の単体テスト
 pnpm build      # 本番向けビルド
-pnpm check      # 上記4つをまとめて実行
+pnpm check      # 静的検査・未使用コード・単体テスト・ビルド
 pnpm start      # ビルド済みのアプリを起動
 
 pnpm exec playwright install chromium
-pnpm test:e2e   # 本番ビルドでPCと320px幅の操作テスト（先にpnpm build）
+pnpm test:e2e   # 本番ビルドでPC・320px幅の操作とアクセシビリティを検査（先にpnpm build）
+
+# 公開環境を確認。ローカルサーバーは起動しません
+PLAYWRIGHT_BASE_URL=https://warica.vercel.app pnpm test:e2e --workers=2
 ```
 
 GitHub ActionsはNode.js 24で静的チェック、単体テスト、ビルド、依存関係監査、ブラウザテストを実行します。
+
+公開環境の確認結果と再実行方法は[検証記録](docs/PRODUCTION_VERIFICATION.md)を参照してください。
 
 ## 計算ルール
 

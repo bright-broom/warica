@@ -158,7 +158,7 @@ export default function HomePage() {
             ))}
           </ul>
         ) : null}
-        {state.members.length < 2 && <p className="mt-4 text-xs text-main/60">2人以上</p>}
+        {state.members.length < 2 && <p className="mt-4 text-xs text-muted-foreground">2人以上</p>}
       </Panel>
       <ActionRow>
         {ready ? (

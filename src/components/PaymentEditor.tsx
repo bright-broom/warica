@@ -85,7 +85,7 @@ export function PaymentEditor({
         <Field id="amount" label="金額">
           <div className="relative">
             <span
-              className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-xl text-main/50"
+              className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-xl text-muted-foreground"
               aria-hidden="true"
             >
               ¥
@@ -115,14 +115,14 @@ export function PaymentEditor({
             />
           </div>
         </Field>
-        <p id="amount-hint" className={amountError ? 'text-xs text-main/70' : 'sr-only'}>
+        <p id="amount-hint" className={amountError ? 'text-xs text-muted-foreground' : 'sr-only'}>
           {amountError || '1〜1,000,000円・整数で入力'}
         </p>
         <div className="relative">
           <Label
             htmlFor="payer"
             title="支払った人"
-            className="pointer-events-none absolute top-1/2 left-4 z-10 -translate-y-1/2 text-main/60"
+            className="pointer-events-none absolute top-1/2 left-4 z-10 -translate-y-1/2 text-muted-foreground"
           >
             <UserRound size={18} aria-hidden="true" />
             <span className="sr-only">支払った人</span>
@@ -164,7 +164,7 @@ export function PaymentEditor({
           <FieldLegend className="sr-only">割り勘に含める人</FieldLegend>
           <div className="mb-2 flex items-center justify-between">
             <span
-              className="flex items-center gap-2 text-xs text-main/65 tabular-nums"
+              className="flex items-center gap-2 text-xs text-muted-foreground tabular-nums"
               aria-label={`${selected.length}人を選択`}
             >
               <Users size={18} aria-hidden="true" />
@@ -206,7 +206,7 @@ export function PaymentEditor({
             ))}
           </div>
           {!selected.length && (
-            <p className="mt-3 text-xs text-main/70" role="status">
+            <p className="mt-3 text-xs text-muted-foreground" role="status">
               対象者を選択
             </p>
           )}
@@ -221,7 +221,7 @@ export function PaymentEditor({
                   : `${yen(shares[shares.length - 1])}〜${yen(shares[0])}`
                 : '—'}
             </strong>
-            <span className="text-xs text-main/60">/ 人</span>
+            <span className="text-xs text-muted-foreground">/ 人</span>
           </div>
           <IconAction
             type="submit"
