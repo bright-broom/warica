@@ -198,7 +198,7 @@ body {
 [data-slot='label']:has([data-state='checked']) {
   border-color: var(--brand-main);
 }
-:is([data-slot='dropdown-menu-content'], [data-slot='alert-dialog-content']) {
+[data-slot='alert-dialog-content'] {
   border: 2px solid var(--brand-main);
   box-shadow: 5px 5px 0 var(--brand-main);
 }
