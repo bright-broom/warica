@@ -26,9 +26,12 @@ import {
   SectionHeader,
   TextArea,
 } from '@/components/ui';
+import { PayPayTransfer } from '@/components/PayPayTransfer';
+import { settlementKey } from '@/lib/paypay';
 import { PaymentHistory } from '@/components/PaymentHistory';
 import { routes } from '@/config/navigation';
 import { useWarikanStore } from '../useWarikanStore';
+import type { Settlement } from '@/lib/types';
 import { settlementText, yen } from '@/lib/calculations';
 
 export default function ResultPage() {
@@ -38,6 +41,12 @@ export default function ResultPage() {
   const [shareText, setShareText] = useState('');
   const [copiedText, setCopiedText] = useState('');
   const text = settlementText(state);
+  function transferText(settlement: Settlement) {
+    const link = state.paypayLinks?.find(
+      (item) => settlementKey(item) === settlementKey(settlement),
+    );
+    return `${state.eventName}\n${settlement.from} → ${settlement.to}：${yen(settlement.amount)}${link ? `\n${link.url}` : ''}`;
+  }
   async function copy(value = text) {
     try {
       await navigator.clipboard.writeText(value);
@@ -98,7 +107,7 @@ export default function ResultPage() {
           <ol data-testid="transfer-list" className="divide-y divide-main/10">
             {settlements.map((settlement, i) => (
               <li
-                key={`${settlement.fromId}-${settlement.toId}`}
+                key={`${state.eventName}-${settlementKey(settlement)}`}
                 className="grid grid-cols-[1.25rem_minmax(0,1fr)_3rem] items-center gap-x-3 gap-y-2 py-5 first:pt-0 sm:grid-cols-[1.5rem_minmax(0,1fr)_auto_3rem]"
               >
                 <span className="text-xs text-muted-foreground tabular-nums" aria-hidden="true">
@@ -115,18 +124,10 @@ export default function ResultPage() {
                 <IconAction
                   className="col-start-3 sm:col-start-4"
                   label={`${settlement.from}から${settlement.to}への送金をコピー`}
-                  icon={
-                    copiedText ===
-                    `${state.eventName}\n${settlement.from} → ${settlement.to}：${yen(settlement.amount)}`
-                      ? Check
-                      : Copy
-                  }
-                  onClick={() =>
-                    void copy(
-                      `${state.eventName}\n${settlement.from} → ${settlement.to}：${yen(settlement.amount)}`,
-                    )
-                  }
+                  icon={copiedText === transferText(settlement) ? Check : Copy}
+                  onClick={() => void copy(transferText(settlement))}
                 />
+                <PayPayTransfer settlement={settlement} />
               </li>
             ))}
           </ol>
