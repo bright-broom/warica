@@ -252,7 +252,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           ref={mainRef}
           id="main"
           tabIndex={-1}
-          className="min-h-0 min-w-0 space-y-4 scroll-pt-4 scroll-pb-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] max-lg:h-full max-lg:overflow-y-auto sm:space-y-5 lg:pb-8"
+          className="min-h-0 min-w-0 space-y-4 scroll-pt-4 scroll-pb-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] max-lg:h-full max-lg:overflow-x-hidden max-lg:overflow-y-auto max-lg:overscroll-x-none sm:space-y-5 lg:pb-8"
         >
           {(storageError || workspace.storageError) && (
             <Notice alert>

@@ -189,7 +189,6 @@ body {
 }
 [data-ui='button']:not(:disabled):active,
 [data-ui='choice']:active {
-  transform: translateY(2px);
   box-shadow: none;
 }
 [data-slot='label']:has([data-slot='checkbox']) {
@@ -264,7 +263,8 @@ body {
 .pop-friend-back {
   width: 73px;
   height: 78px;
-  right: 2px;
+  /* Keep the rotated sticker and its shadow inside the narrow hero. */
+  right: 10px;
   top: 9px;
   border-radius: 24px;
   background: var(--brand-sub);
@@ -322,7 +322,22 @@ body {
     left: 14px;
   }
 }
-@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+@media (width < 64rem) {
+  html,
+  body {
+    overflow-x: clip;
+    overscroll-behavior-x: none;
+  }
+}
+
+@media (width >= 64rem) {
+  [data-ui='button']:not(:disabled):active,
+  [data-ui='choice']:active {
+    transform: translateY(2px);
+  }
+}
+
+@media (width >= 64rem) and (hover: hover) and (prefers-reduced-motion: no-preference) {
   [data-ui='button']:not(:disabled):hover,
   [data-ui='choice']:hover {
     transform: translateY(-2px);
