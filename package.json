@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "pnpm generate:icons && next build",
-    "start": "next start",
+    "start": "wrangler dev --ip 127.0.0.1 --port 3100",
     "lint": "eslint . --max-warnings=0 && pnpm check:design",
     "typecheck": "next typegen && tsc --noEmit",
     "test": "tsx --test tests/unit/*.test.ts",
@@ -15,8 +15,10 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "check:design": "node scripts/check-design-system.mjs",
-    "generate:icons": "node scripts/generate-brand-icon.mjs",
-    "check:unused": "knip"
+    "generate:icons": "tsx scripts/generate-brand-icon.mts",
+    "check:unused": "knip",
+    "deploy:preview": "pnpm build && wrangler versions upload",
+    "deploy:production": "pnpm build && wrangler deploy"
   },
   "dependencies": {
     "class-variance-authority": "^0.7.1",
@@ -44,7 +46,8 @@
     "prettier": "^3.9.10",
     "tailwindcss": "^4.3.3",
     "tsx": "^4.23.15",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "wrangler": "^4.168.0"
   },
   "packageManager": "pnpm@10.23.0+sha512.21c4e5698002ade97e4efe8b8b4a89a8de3c85a37919f957e7a0f30f38fbc5bbdd05980ffe29179b2fb6e6e691242e098d945d1601772cad0fef5fb6411e2a4b",
   "engines": {

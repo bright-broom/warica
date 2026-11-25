@@ -7,11 +7,11 @@ import { palette, themeVariables } from '@/design/theme';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'WARICA — 楽しい時間の、そのあとに。',
+  title: 'WARICA — 立て替えから、誰が誰にいくら送るかを出す割り勘アプリ',
   description:
-    '旅行も、食事も、いつもの集まりも。誰がいくら払ったかを記録して、みんなの割り勘をすっきり。登録不要の割り勘アプリ。',
+    '旅行や食事の立て替えを記録して、誰が誰にいくら送れば精算が終わるかを計算します。ログイン不要、データはブラウザの中だけに保存します。',
   applicationName: 'WARICA',
-  icons: { icon: '/brand-icon' },
+  icons: { icon: '/brand-icon.svg' },
 };
 export const viewport: Viewport = {
   width: 'device-width',

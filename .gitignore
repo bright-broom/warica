@@ -43,3 +43,6 @@ next-env.d.ts
 /test-results/
 /playwright-report/
 /artifacts/
+
+# cloudflare (wrangler dev のローカル状態)
+/.wrangler/
