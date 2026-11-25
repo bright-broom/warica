@@ -1,11 +1,11 @@
 'use client';
 import { useId, useRef, useState, type FormEvent } from 'react';
-import { Check, ExternalLink, Link2, Pencil, Trash2, X } from 'lucide-react';
+import { Check, ExternalLink, Link2, Pencil, Trash2 } from 'lucide-react';
 import { useWarikanStore } from '@/state/warikan-store';
 import { PAYPAY_GUIDE_URL, settlementKey } from '@/lib/domain/paypay';
 import type { Settlement } from '@/lib/domain/types';
 import { yen } from '@/lib/domain/calculations';
-import { IconAction } from '@/components/actions';
+import { ActionButton } from '@/components/actions';
 import { Field, Help, Notice, TextInput } from '@/components/ui';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent } from '@/components/ui/collapsible';
@@ -57,7 +57,7 @@ export function PayPayTransfer({ settlement }: { settlement: Settlement }) {
                 }
               }}
             >
-              PayPay <ExternalLink className="size-4" aria-hidden="true" />
+              PayPayを開く <ExternalLink className="size-4" aria-hidden="true" />
             </a>
           </Button>
         )}
@@ -86,11 +86,15 @@ export function PayPayTransfer({ settlement }: { settlement: Settlement }) {
       {link && !open && (
         <p className="mt-2 text-right text-xs text-muted-foreground">宛先・金額はPayPayで確認</p>
       )}
-      {error && <Notice alert>{error}</Notice>}
+      {error && !open && (
+        <div className="mt-2">
+          <Notice alert>{error}</Notice>
+        </div>
+      )}
       <CollapsibleContent id={`${inputId}-editor`}>
         <form
           onSubmit={save}
-          className="mt-3 space-y-3 rounded-control border border-main/15 p-3"
+          className="mt-3 space-y-3 rounded-control border border-border bg-muted p-3"
           onKeyDown={(event) => {
             if (event.key === 'Escape') {
               event.stopPropagation();
@@ -115,28 +119,41 @@ export function PayPayTransfer({ settlement }: { settlement: Settlement }) {
               placeholder="https://…"
               autoFocus
               aria-invalid={!!error}
+              aria-describedby={error ? `${inputId}-error` : undefined}
             />
           </Field>
-          <div className="ml-auto flex max-w-[6.25rem] flex-wrap justify-end gap-1 sm:max-w-none">
+          {error && (
+            <p id={`${inputId}-error`} role="alert" className="text-sm font-medium text-main">
+              {error}
+            </p>
+          )}
+          <div className="ml-auto flex w-fit flex-col items-stretch gap-2 sm:flex-row-reverse sm:items-center">
+            <ActionButton
+              type="submit"
+              icon={Check}
+              variant="primary"
+              aria-label="請求リンクを登録する"
+              disabled={!input.trim()}
+            >
+              登録する
+            </ActionButton>
+            <ActionButton variant="ghost" aria-label="リンク編集をキャンセル" onClick={close}>
+              キャンセル
+            </ActionButton>
             {link && (
-              <IconAction
-                label={`${label}請求リンクを削除`}
+              <ActionButton
                 icon={Trash2}
+                variant="ghost"
+                aria-label={`${label}請求リンクを削除`}
                 onClick={() => {
                   const result = store.removePayPayLink(settlement);
                   if (result.ok) close();
                   else setError(result.error);
                 }}
-              />
+              >
+                リンクを削除
+              </ActionButton>
             )}
-            <IconAction label="リンク編集をキャンセル" icon={X} onClick={close} />
-            <IconAction
-              label="請求リンクを登録する"
-              icon={Check}
-              type="submit"
-              variant="primary"
-              disabled={!input.trim()}
-            />
           </div>
           <Help label="請求リンクの作り方">
             受け取る人がPayPayで本人確認を済ませ、LINEのトークで「＋」→「送る・受け取る」→「請求リンクを作成」。精算額で作成し、共有されたリンクを貼り付けてください。

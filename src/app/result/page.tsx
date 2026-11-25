@@ -23,6 +23,7 @@ import { useWarikanStore } from '@/state/warikan-store';
 import { settlementKey } from '@/lib/domain/paypay';
 import type { MemberBalance, Settlement } from '@/lib/domain/types';
 import { settlementText, yen } from '@/lib/domain/calculations';
+import { scrollToContent } from '@/lib/scroll';
 
 export default function ResultPage() {
   const { state, balances, settlements, total } = useWarikanStore();
@@ -47,11 +48,13 @@ export default function ResultPage() {
       setShareText(value);
       setShowText(true);
       setMessage('コピーできませんでした。下のテキストを選択してコピーしてください。');
+      // 行ごとのコピーから出したときも、代わりの文章が見える位置まで動かす
+      requestAnimationFrame(() => scrollToContent(document.getElementById('share-text'), 'smooth'));
     }
   }
   return (
     <>
-      <PageHeader step="ステップ 3 / 3" title="精算">
+      <PageHeader step="ステップ 3 / 3" title="精算結果">
         この通りに送金すると、全員の負担がそろいます。送金はPayPayや振込などで各自が行い、このアプリはお金を動かしません。
       </PageHeader>
       {state.payments.some((p) => p.needsReview) && (
@@ -65,8 +68,8 @@ export default function ResultPage() {
       )}
       <Panel tone="inverse" aria-label="精算の概要">
         <p className="text-sm text-sub/80 wrap-anywhere">{state.eventName}</p>
-        <dl className="mt-2 flex flex-wrap items-end gap-x-8 gap-y-3">
-          <div>
+        <dl className="mt-2 grid grid-cols-2 gap-x-6 gap-y-3 sm:flex sm:flex-wrap sm:items-end sm:gap-x-8">
+          <div className="col-span-2 sm:col-span-1">
             <dt className="text-xs text-sub/80">立て替え合計</dt>
             <dd className="text-4xl font-semibold tracking-tight tabular-nums sm:text-5xl">
               {yen(total)}
@@ -85,7 +88,7 @@ export default function ResultPage() {
       <Panel>
         <SectionHeader
           title="送金"
-          description="左の人が右の人へ送ります。送金は最大で「人数−1」件にまとめています。"
+          description="「から」の人が「へ」の人に送ります。送金は最大で「人数−1」件にまとめています。"
         >
           <Badge>{settlements.length}件</Badge>
         </SectionHeader>
@@ -99,18 +102,40 @@ export default function ResultPage() {
             一括コピー
           </ActionButton>
         </div>
+        {/* コピーの結果と、コピーできなかったときの文章は、押したボタンのすぐ下に出す */}
+        <p className={message ? '-mt-2 mb-4 text-sm leading-6' : 'sr-only'} role="status">
+          {message}
+        </p>
+        {showText && (
+          <div className="mb-5">
+            <Field id="share-text" label="共有用テキスト">
+              <TextArea
+                id="share-text"
+                value={shareText}
+                readOnly
+                onFocus={(e) => e.target.select()}
+              />
+            </Field>
+          </div>
+        )}
         {settlements.length ? (
           <ol data-testid="transfer-list" className="divide-y divide-border">
             {settlements.map((settlement) => (
               <li
                 key={`${state.eventName}-${settlementKey(settlement)}`}
-                className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 py-4 first:pt-0"
+                className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-2 py-4 first:pt-0"
               >
-                <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 font-semibold wrap-anywhere">
-                  <span>{settlement.from}</span>
-                  <ArrowRight size={16} className="text-muted-foreground" aria-label="から" />
-                  <span>{settlement.to}</span>
-                </div>
+                {/* スマホでは「Aから」「Bへ」の2行。長い名前でも矢印だけが行に取り残されない */}
+                <p className="min-w-0 pt-2 font-semibold leading-7 wrap-anywhere">
+                  <NameWith name={settlement.from} particle="から" />
+                  <br className="sm:hidden" />
+                  <ArrowRight
+                    size={16}
+                    className="mx-1.5 hidden align-[-2px] text-muted-foreground sm:inline"
+                    aria-hidden="true"
+                  />
+                  <NameWith name={settlement.to} particle="へ" />
+                </p>
                 <div className="flex items-center gap-1">
                   <strong className="text-lg font-semibold tabular-nums">
                     {yen(settlement.amount)}
@@ -129,19 +154,6 @@ export default function ResultPage() {
           <EmptyState icon={Check} title="精算不要" headingLevel={3}>
             全員の支払った額と負担額が一致しています。送金はいりません。
           </EmptyState>
-        )}
-        <p className={message ? 'mt-4 text-sm leading-6' : 'sr-only'} role="status">
-          {message}
-        </p>
-        {showText && (
-          <Field id="share-text" label="共有用テキスト">
-            <TextArea
-              id="share-text"
-              value={shareText}
-              readOnly
-              onFocus={(e) => e.target.select()}
-            />
-          </Field>
         )}
       </Panel>
       <Panel>
@@ -164,6 +176,21 @@ export default function ResultPage() {
           支払いを追加・編集する
         </ActionLink>
       </ActionRow>
+    </>
+  );
+}
+
+/** 名前の最後の1文字と助詞をつなげ、「へ」だけが次の行に落ちないようにする */
+function NameWith({ name, particle }: { name: string; particle: string }) {
+  const chars = Array.from(name);
+  const last = chars.pop() ?? '';
+  return (
+    <>
+      {chars.join('')}
+      <span className="whitespace-nowrap">
+        {last}
+        <span className="font-normal text-muted-foreground"> {particle}</span>
+      </span>
     </>
   );
 }

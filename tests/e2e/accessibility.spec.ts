@@ -11,6 +11,10 @@ test('all pages and confirmation expose accessible names and readable text', asy
   // axe で10か所近い状態を順に検査する。単独では WebKit でも約15秒だが、並列実行では30秒を超えることがある
   test.setTimeout(90_000);
   const scan = async (name: string) => {
+    // 直前のクリック位置にポインターが残ると、遅れて開くツールチップのフェード途中を測ってしまう。
+    // タッチ操作ではツールチップは開かないので、ポインターを外してから検査する。
+    await page.mouse.move(0, 0);
+    await expect(page.locator('[data-slot="tooltip-content"]')).toHaveCount(0);
     // Inspect the settled UI, rather than sampling toast/dialog fade transitions.
     await page.evaluate(
       () =>

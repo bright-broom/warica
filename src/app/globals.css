@@ -118,6 +118,11 @@
   border: 1px solid var(--border);
   background-color: var(--app-paper);
 }
+/* 支払いの編集中は、どのパネルを直しているかを枠で示す */
+[data-ui='panel'][data-editing='yes'] {
+  border-color: var(--brand-main);
+  border-width: 2px;
+}
 [data-ui='panel'][data-tone='inverse'] {
   border-color: var(--brand-main);
   background-color: var(--brand-main);

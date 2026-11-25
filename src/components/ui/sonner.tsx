@@ -15,7 +15,9 @@ const Toaster = ({ ...props }: ToasterProps) => {
       theme="light"
       position="top-center"
       containerAriaLabel="通知"
-      duration={5000}
+      duration={3000}
+      // 続けて追加しても通知が重なってヘッダーを覆わないよう、1件ずつ出す
+      visibleToasts={1}
       toastOptions={{
         classNames: {
           toast: '!border-main/15 !bg-main !text-sub',

@@ -95,7 +95,10 @@ export default function MembersPage() {
                 id="member-name"
                 ref={nameRef}
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  setError('');
+                }}
                 placeholder="例：あおい"
                 maxLength={20}
                 autoComplete="off"
@@ -155,6 +158,7 @@ export default function MembersPage() {
                       onClick={() => {
                         setEditId(member.id);
                         setEditName(member.name);
+                        setError('');
                       }}
                     />
                     <IconAction
@@ -171,12 +175,12 @@ export default function MembersPage() {
           <p className="mt-5 text-sm text-muted-foreground">まだメンバーがいません。</p>
         )}
       </Panel>
+      {!payments.ready && (
+        <p className="px-1 text-right text-sm text-muted-foreground" role="status">
+          {payments.blockedReason}
+        </p>
+      )}
       <ActionRow>
-        {!payments.ready && (
-          <p className="text-sm text-muted-foreground" role="status">
-            {payments.blockedReason}
-          </p>
-        )}
         {payments.ready ? (
           <ActionLink href={routes.payments} icon={ArrowRight} trailingIcon variant="primary">
             支払いを記録する
