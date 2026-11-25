@@ -1,5 +1,6 @@
 'use client';
 import type { LucideIcon } from 'lucide-react';
+import { cx } from './ui';
 import { ToggleGroup, ToggleGroupItem } from './ui/toggle-group';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 
@@ -26,7 +27,11 @@ export function ChoiceChips({
     <ToggleGroup
       type="single"
       spacing={1}
-      className="flex max-w-[6.25rem] flex-wrap justify-end gap-2 sm:max-w-none sm:justify-start"
+      // スマホは右半分（約 9.5rem）に収める：3つまでは1行、4つは2つずつ2行
+      className={cx(
+        'flex flex-wrap justify-end gap-2 sm:max-w-none sm:justify-start',
+        choices.length <= 3 ? 'max-w-[9.5rem]' : 'max-w-[6.25rem]',
+      )}
       aria-label={label}
       value={value}
       onValueChange={(next) => {

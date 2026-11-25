@@ -61,7 +61,7 @@ test('complete flow: selected participants, immediate reload, edit, copy fallbac
   await page.getByRole('link', { name: '精算結果を見る' }).click();
   await expect(page).toHaveURL(/\/result$/);
   await page.reload();
-  await expect(page.getByRole('heading', { name: '精算', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '精算結果', exact: true })).toBeVisible();
   const transfer = page.getByTestId('transfer-list').locator('li');
   await expect(transfer).toHaveCount(1);
   await expect(transfer).toContainText('はる');
@@ -224,7 +224,7 @@ test('empty and populated screens fit the viewport with long names', async ({ pa
   await page.getByRole('button', { name: 'この支払いを追加する' }).click();
   await noOverflow(page);
   await page.getByRole('link', { name: '精算結果を見る' }).click();
-  await expect(page.getByRole('heading', { name: '精算', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '精算結果', exact: true })).toBeVisible();
   await noOverflow(page);
   await page.screenshot({
     path: `artifacts/${testInfo.project.name}-result.png`,

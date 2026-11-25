@@ -248,7 +248,7 @@ export function EmptyState({
  */
 export function ActionRow({ children }: { children: ReactNode }) {
   return (
-    <div className="flex flex-col items-end gap-2 pt-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end sm:gap-3">
+    <div className="ml-auto flex w-fit flex-col items-stretch gap-2 pt-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center sm:justify-end sm:gap-3">
       {children}
     </div>
   );

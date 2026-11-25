@@ -90,7 +90,7 @@ export function PaymentEditor({
         title={editingId ? '支払いを編集' : '支払いを追加'}
         description={
           editingId
-            ? '内容を直して「変更を保存」を押すと、精算結果に反映されます。'
+            ? '内容を直して「変更を保存する」を押すと、精算結果に反映されます。'
             : '1回の立て替えを1件として記録します。'
         }
       >

@@ -267,7 +267,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <Notice alert>
               {storageError && <p>{storageError}</p>}
               {workspace.storageError && <p>{workspace.storageError}</p>}
-              <div className="mt-3 flex flex-wrap justify-end gap-2">
+              <div className="mt-3 ml-auto flex w-fit flex-col items-stretch gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:justify-end">
                 {storageConflict && (
                   <ActionButton
                     icon={RefreshCw}
