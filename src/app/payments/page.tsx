@@ -3,12 +3,12 @@ import { ArrowLeft, ArrowRight, Wallet, ReceiptText } from 'lucide-react';
 import { IconAction, IconLink } from '@/components/IconAction';
 import { ActionRow, Badge, Notice } from '@/components/ui';
 import { toast } from 'sonner';
-import { usePaymentWorkspace } from '@/components/PaymentWorkspace';
-import { PaymentEditor } from '@/components/PaymentEditor';
-import { PaymentHistory } from '@/components/PaymentHistory';
+import { usePaymentWorkspace } from '@/state/payment-workspace';
+import { PaymentEditor } from '@/components/payments/PaymentEditor';
+import { PaymentHistory } from '@/components/payments/PaymentHistory';
 import { routes } from '@/config/navigation';
-import { useWarikanStore } from '../useWarikanStore';
-import { yen } from '@/lib/calculations';
+import { useWarikanStore } from '@/state/warikan-store';
+import { yen } from '@/lib/domain/calculations';
 import { scrollToContent } from '@/lib/scroll';
 
 export default function PaymentsPage() {

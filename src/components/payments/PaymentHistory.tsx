@@ -13,13 +13,13 @@ import {
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
-import { useWarikanStore } from '@/app/useWarikanStore';
-import { Avatar, Badge, EmptyState, Panel, SectionHeader, TextInput } from './ui';
-import { useConfirmation } from './ApplicationUI';
-import { IconAction } from './IconAction';
-import type { Payment } from '@/lib/types';
-import { yen } from '@/lib/calculations';
-import { createPaymentSearchIndex, searchPayments } from '@/lib/payment-history';
+import { useWarikanStore } from '@/state/warikan-store';
+import { Avatar, Badge, EmptyState, Panel, SectionHeader, TextInput } from '@/components/ui';
+import { useConfirmation } from '@/components/layout/ApplicationUI';
+import { IconAction } from '@/components/IconAction';
+import type { Payment } from '@/lib/domain/types';
+import { yen } from '@/lib/domain/calculations';
+import { createPaymentSearchIndex, searchPayments } from '@/lib/domain/payment-history';
 import { scrollToContent } from '@/lib/scroll';
 
 const PAGE_SIZE = 20;

@@ -1,7 +1,7 @@
 import { strict as assert } from 'node:assert';
 import test from 'node:test';
-import { normalizeYenInput } from '../src/lib/input';
-import { validateAmount } from '../src/lib/validation';
+import { normalizeYenInput } from '../../src/lib/domain/input';
+import { validateAmount } from '../../src/lib/domain/validation';
 
 test('Japanese digits and correctly grouped pasted amounts are accepted exactly', () => {
   for (const value of ['１２，８００', '12,800', '１２８００', ' 12800 ']) {

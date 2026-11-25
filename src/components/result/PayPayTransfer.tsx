@@ -1,14 +1,14 @@
 'use client';
 import { useId, useRef, useState, type FormEvent } from 'react';
 import { Check, ExternalLink, Link2, Pencil, Trash2, X } from 'lucide-react';
-import { useWarikanStore } from '@/app/useWarikanStore';
-import { PAYPAY_GUIDE_URL, settlementKey } from '@/lib/paypay';
-import type { Settlement } from '@/lib/types';
-import { yen } from '@/lib/calculations';
-import { IconAction } from './IconAction';
-import { Field, Help, Notice, TextInput } from './ui';
-import { Button } from './ui/button';
-import { Collapsible, CollapsibleContent } from './ui/collapsible';
+import { useWarikanStore } from '@/state/warikan-store';
+import { PAYPAY_GUIDE_URL, settlementKey } from '@/lib/domain/paypay';
+import type { Settlement } from '@/lib/domain/types';
+import { yen } from '@/lib/domain/calculations';
+import { IconAction } from '@/components/IconAction';
+import { Field, Help, Notice, TextInput } from '@/components/ui';
+import { Button } from '@/components/ui/button';
+import { Collapsible, CollapsibleContent } from '@/components/ui/collapsible';
 
 export function PayPayTransfer({ settlement }: { settlement: Settlement }) {
   const store = useWarikanStore();

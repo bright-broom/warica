@@ -15,17 +15,17 @@ import {
   ArrowLeft,
   RefreshCw,
 } from 'lucide-react';
-import { usePaymentWorkspace } from './PaymentWorkspace';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Spinner } from './ui/spinner';
-import { useConfirmation } from './ApplicationUI';
-import { IconAction, IconLink } from './IconAction';
-import { Avatar, EmptyState, Notice, cx } from './ui';
+import { usePaymentWorkspace } from '@/state/payment-workspace';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Spinner } from '@/components/ui/spinner';
+import { useConfirmation } from '@/components/layout/ApplicationUI';
+import { IconAction, IconLink } from '@/components/IconAction';
+import { Avatar, EmptyState, Notice, cx } from '@/components/ui';
 import { navigation, routes } from '@/config/navigation';
-import { useWarikanStore } from '@/app/useWarikanStore';
-import { MAX_FILE_SIZE, parseState, serializeState } from '@/lib/storage';
-import { yen } from '@/lib/calculations';
+import { useWarikanStore } from '@/state/warikan-store';
+import { MAX_FILE_SIZE, parseState, serializeState } from '@/lib/persistence/storage';
+import { yen } from '@/lib/domain/calculations';
 
 export function AppShell({ children }: { children: ReactNode }) {
   const mainRef = useRef<HTMLElement>(null);

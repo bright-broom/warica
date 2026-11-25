@@ -1,4 +1,4 @@
-import type { Member, Result } from './types';
+import type { Member, Result } from '../domain/types';
 
 export const DRAFT_KEY = 'warica-payment-draft-v1';
 export type PaymentDraft = {

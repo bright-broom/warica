@@ -15,7 +15,7 @@ import {
   type PaymentInput,
   type Result,
   type Settlement,
-} from '@/lib/types';
+} from '@/lib/domain/types';
 import {
   loadFromStorage,
   saveToStorage,
@@ -24,15 +24,15 @@ import {
   MAX_FILE_SIZE,
   STORAGE_KEY,
   STORAGE_CONFLICT_MESSAGE,
-} from '@/lib/storage';
-import { MAX_MEMBERS, MAX_PAYMENTS, validateMemberName, validatePayment } from '@/lib/validation';
+} from '@/lib/persistence/storage';
+import { MAX_MEMBERS, MAX_PAYMENTS, validateMemberName, validatePayment } from '@/lib/domain/validation';
 import {
   currentSettlements,
   retainPayPayLinks,
   settlementKey,
   validatePayPayUrl,
-} from '@/lib/paypay';
-import { calculateMemberBalances, calculateSettlements } from '@/lib/calculations';
+} from '@/lib/domain/paypay';
+import { calculateMemberBalances, calculateSettlements } from '@/lib/domain/calculations';
 
 function useStore() {
   const [state, setState] = useState<WarikanState>(() => emptyState());

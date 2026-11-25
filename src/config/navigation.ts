@@ -1,5 +1,5 @@
 import { ArrowRightLeft, ReceiptText, Users } from 'lucide-react';
-import type { WarikanState } from '@/lib/types';
+import type { WarikanState } from '@/lib/domain/types';
 
 export const routes = {
   members: '/',

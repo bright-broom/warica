@@ -18,7 +18,7 @@ import { PopWelcome } from '@/components/PopWelcome';
 import { IconAction, IconLink } from '@/components/IconAction';
 import { ActionRow, Avatar, Badge, Notice, Panel, SectionHeader, TextInput } from '@/components/ui';
 import { navigation, routes } from '@/config/navigation';
-import { useWarikanStore } from './useWarikanStore';
+import { useWarikanStore } from '@/state/warikan-store';
 
 export default function HomePage() {
   const { state, setEventName, addMember, editMember, removeMember } = useWarikanStore();

@@ -2,8 +2,8 @@ import { goToStep } from './page-arrows';
 import { savedEmptyEvent } from './saved-empty-event';
 import { expect, test, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
-import { DRAFT_KEY, emptyWorkspace, serializeDraft } from '../../src/lib/payment-draft';
-import { STORAGE_KEY } from '../../src/lib/storage';
+import { DRAFT_KEY, emptyWorkspace, serializeDraft } from '../../src/lib/persistence/payment-draft';
+import { STORAGE_KEY } from '../../src/lib/persistence/storage';
 
 test.use({ storageState: savedEmptyEvent });
 

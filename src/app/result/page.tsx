@@ -28,13 +28,13 @@ import {
   SectionHeader,
   TextArea,
 } from '@/components/ui';
-import { PayPayTransfer } from '@/components/PayPayTransfer';
-import { settlementKey } from '@/lib/paypay';
-import { PaymentHistory } from '@/components/PaymentHistory';
+import { PayPayTransfer } from '@/components/result/PayPayTransfer';
+import { settlementKey } from '@/lib/domain/paypay';
+import { PaymentHistory } from '@/components/payments/PaymentHistory';
 import { routes } from '@/config/navigation';
-import { useWarikanStore } from '../useWarikanStore';
-import type { Settlement } from '@/lib/types';
-import { settlementText, yen } from '@/lib/calculations';
+import { useWarikanStore } from '@/state/warikan-store';
+import type { Settlement } from '@/lib/domain/types';
+import { settlementText, yen } from '@/lib/domain/calculations';
 
 export default function ResultPage() {
   const { state, balances, settlements, total } = useWarikanStore();

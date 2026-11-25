@@ -1,8 +1,8 @@
 import type { Metadata, Viewport } from 'next';
-import { WarikanProvider } from './useWarikanStore';
-import { PaymentWorkspaceProvider } from '@/components/PaymentWorkspace';
-import { ApplicationUI } from '@/components/ApplicationUI';
-import { AppShell } from '@/components/AppShell';
+import { WarikanProvider } from '@/state/warikan-store';
+import { PaymentWorkspaceProvider } from '@/state/payment-workspace';
+import { ApplicationUI } from '@/components/layout/ApplicationUI';
+import { AppShell } from '@/components/layout/AppShell';
 import { palette, themeVariables } from '@/design/theme';
 import './globals.css';
 

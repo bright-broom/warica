@@ -1,8 +1,8 @@
 import { goToStep } from './page-arrows';
 import { savedEmptyEvent } from './saved-empty-event';
 import { expect, test, type Page } from '@playwright/test';
-import { serializeState } from '../../src/lib/storage';
-import { emptyState } from '../../src/lib/types';
+import { serializeState } from '../../src/lib/persistence/storage';
+import { emptyState } from '../../src/lib/domain/types';
 const key = 'warican-app-data-v2';
 async function offerBackup(page: Page, raw: string) {
   await page.getByLabel('バックアップファイル').setInputFiles({

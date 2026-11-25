@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { createPaymentSearchIndex, searchPayments } from '../src/lib/payment-history';
-import type { Payment } from '../src/lib/types';
+import { createPaymentSearchIndex, searchPayments } from '../../src/lib/domain/payment-history';
+import type { Payment } from '../../src/lib/domain/types';
 
 const members = [
   { id: 'a', name: 'あおい' },

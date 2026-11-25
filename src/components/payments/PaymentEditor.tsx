@@ -14,18 +14,18 @@ import {
   TrainFront,
   Coffee,
 } from 'lucide-react';
-import { Checkbox } from './ui/checkbox';
-import { Label } from './ui/label';
-import { FieldSet, FieldLegend } from './ui/field';
-import { NativeSelectOption } from './ui/native-select';
-import { IconChoices } from './IconChoices';
-import { IconAction } from './IconAction';
-import { Field, Help, Notice, Panel, SectionHeader, SelectInput, TextInput } from './ui';
-import { usePaymentWorkspace } from './PaymentWorkspace';
-import { useWarikanStore } from '@/app/useWarikanStore';
-import { calculatePaymentSplit, yen } from '@/lib/calculations';
-import { validateAmount } from '@/lib/validation';
-import { normalizeYenInput } from '@/lib/input';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import { FieldSet, FieldLegend } from '@/components/ui/field';
+import { NativeSelectOption } from '@/components/ui/native-select';
+import { IconChoices } from '@/components/IconChoices';
+import { IconAction } from '@/components/IconAction';
+import { Field, Help, Notice, Panel, SectionHeader, SelectInput, TextInput } from '@/components/ui';
+import { usePaymentWorkspace } from '@/state/payment-workspace';
+import { useWarikanStore } from '@/state/warikan-store';
+import { calculatePaymentSplit, yen } from '@/lib/domain/calculations';
+import { validateAmount } from '@/lib/domain/validation';
+import { normalizeYenInput } from '@/lib/domain/input';
 
 export function PaymentEditor({
   onDone,

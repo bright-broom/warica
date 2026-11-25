@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint . --max-warnings=0 && pnpm check:design",
     "typecheck": "next typegen && tsc --noEmit",
-    "test": "tsx --test tests/*.test.ts",
+    "test": "tsx --test tests/unit/*.test.ts",
     "benchmark:storage": "tsx scripts/benchmark-storage.ts",
     "test:e2e": "playwright test",
     "check": "pnpm lint && pnpm check:unused && pnpm typecheck && pnpm test && pnpm build",

@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { currentSettlements, retainPayPayLinks, validatePayPayUrl } from '../src/lib/paypay';
-import { emptyState, type WarikanState } from '../src/lib/types';
-import { parseState, serializeState } from '../src/lib/storage';
+import { currentSettlements, retainPayPayLinks, validatePayPayUrl } from '../../src/lib/domain/paypay';
+import { emptyState, type WarikanState } from '../../src/lib/domain/types';
+import { parseState, serializeState } from '../../src/lib/persistence/storage';
 
 const state: WarikanState = {
   ...emptyState(),

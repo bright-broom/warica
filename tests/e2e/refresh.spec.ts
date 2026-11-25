@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
-import { serializeState, STORAGE_KEY } from '../../src/lib/storage';
-import { DRAFT_KEY } from '../../src/lib/payment-draft';
+import { serializeState, STORAGE_KEY } from '../../src/lib/persistence/storage';
+import { DRAFT_KEY } from '../../src/lib/persistence/payment-draft';
 import { goToStep } from './page-arrows';
 
 const event = {
