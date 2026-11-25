@@ -386,7 +386,8 @@ function Progress({ steps, path }: { steps: readonly Step[]; path: string }) {
     >
       {steps.map((step, index) => {
         const active = index === currentIndex;
-        const done = currentIndex > index;
+        // 前の段階でも、次の段階を開ける条件を満たしていなければ完了とは示さない
+        const done = currentIndex > index && !!steps[index + 1]?.ready;
         return (
           <li
             key={step.href}
