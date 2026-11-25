@@ -30,7 +30,7 @@
 | [WAR-011](#war-011) | P2     | 継続検査       | 未着手   | README・書式のCI検査                       |
 | [WAR-012](#war-012) | P2     | 運用           | 確認待ち | 変更がない期間の依存関係監査・通知         |
 | [WAR-013](#war-013) | P2     | 再現済み不具合 | 完了     | スマホ本文の横ずれ・押下時の位置移動       |
-| [WAR-014](#war-014) | P1     | 公開           | 保留     | Cloudflare への初回公開と公開URLでの確認   |
+| [WAR-014](#war-014) | P1     | 公開           | 完了     | Cloudflare への初回公開と公開URLでの確認   |
 
 初回登録は12項目（再現済み不具合3件、その他9件）。引き継ぎ整備時は全項目未完了。支払いリフレッシュ改善でWAR-009を実装・ローカル検証済みに更新した。その後、スマホ横ずれのWAR-013を追加し、ローカルで再現・修正を検証した。新しい課題は一覧と詳細の両方に追記する。
 
@@ -216,7 +216,9 @@
 
 **Cloudflare への初回公開と公開URLでの確認 — P1**
 
-状態：保留（Cloudflare のアカウント認証待ち）。分類：公開。追加：2026-11-25。
+状態：完了（2026-11-25）。分類：公開。追加：2026-11-25。
+
+- **対応結果**：Cloudflare の Workers Builds をリポジトリにつなぎ（ビルド `pnpm build`、デプロイ `npx wrangler deploy`、専用のビルドトークン、プレビュービルド有効）、`main`（`afb82eb`）を https://warica.toshikiii7.workers.dev に公開。直リンク・再読み込み（/payments・/result）200、存在しない URL 404、`_headers` の6つのヘッダーを確認。公開URLに対する E2E は143件成功・1件対象外。Vercel（https://warica.vercel.app ）はロールバック先として残した。独自ドメインは使っていない。
 
 - **済み**：静的書き出し（`output: 'export'`）、`wrangler.jsonc`（静的アセットのみ・`auto-trailing-slash`・`404-page`）、`public/_headers`、`vercel.json`（ロールバック先の Vercel 用ヘッダー）。`pnpm start`（wrangler dev）で直リンク・再読み込み・404・ヘッダーを確認し、E2E 全件をこの配信で実行。
 - **保留の理由**：作業環境に Cloudflare の認証（`wrangler login` または API トークン）がない。
