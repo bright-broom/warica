@@ -8,6 +8,8 @@ test('all pages and confirmation expose accessible names and readable text', asy
   page,
   context,
 }, testInfo) => {
+  // axe で10か所近い状態を順に検査する。単独では WebKit でも約15秒だが、並列実行では30秒を超えることがある
+  test.setTimeout(90_000);
   const scan = async (name: string) => {
     // Inspect the settled UI, rather than sampling toast/dialog fade transitions.
     await page.evaluate(

@@ -649,6 +649,10 @@ test('mobile actions stay in the right half with usable touch targets', async ({
   expect(main).not.toBeNull();
   expect(main!.y + main!.height).toBeGreaterThan(page.viewportSize()!.height - 32);
   expect(main!.y + main!.height).toBeLessThanOrEqual(page.viewportSize()!.height);
+  // 本文の中の絶対配置（読み上げ専用の文字など）が文書全体を伸ばし、ヘッダーごとずれないこと
+  expect(await page.evaluate(() => document.scrollingElement!.scrollHeight)).toBeLessThanOrEqual(
+    page.viewportSize()!.height,
+  );
   await rightHandActions();
   await goToStep(page, '/');
   await expect(page.getByLabel('メンバーの名前', { exact: true })).toBeVisible();
