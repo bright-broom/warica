@@ -10,4 +10,6 @@
     // 存在しない URL には out/404.html を 404 で返す
     "not_found_handling": "404-page",
   },
+  // プルリクエストごとの確認用プレビュー（Workers Builds の `npx wrangler preview`）に必要。中身は上の設定を使う
+  "previews": {},
 }

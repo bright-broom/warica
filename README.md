@@ -2,7 +2,7 @@
 
 旅行や食事で誰かがまとめて払ったお金を記録して、**誰が誰にいくら送れば精算が終わるか**を出す、日本語の割り勘アプリです。グループで出かけた人が、帰り道や後日にスマホで入力し、結果をLINEなどに貼って共有する場面を想定しています。ログインは不要で、入力はそのブラウザの中だけに保存します。
 
-**デモ：** https://warica.vercel.app （Cloudflare への移行手順は[デプロイ](#デプロイ)）
+**デモ：** https://warica.toshikiii7.workers.dev （Cloudflare Workers。同じ内容を https://warica.vercel.app にも置いています）
 
 <table>
   <tr>
@@ -196,15 +196,21 @@ E2E は端末のエミュレーションです。実機のソフトウェアキ�
 | ファビコン                       | ルートハンドラー `/brand-icon`  | ビルド前に作る `public/brand-icon.svg`                                             |
 | サーバー処理・環境変数・外部 API | なし                            | なし                                                                               |
 
-初回の公開（Cloudflare のアカウントでログインが必要です）：
+Cloudflare の Workers Builds をこのリポジトリにつないでいます。`main` に入ると `pnpm build` → `npx wrangler deploy` で本番（https://warica.toshikiii7.workers.dev ）に出て、ほかのブランチの push では確認用のプレビューが作られます。Node.js のバージョンは `.nvmrc` から読まれます。
+
+手元から出すとき（Cloudflare のアカウントでログインが必要です）：
 
 ```sh
 pnpm exec wrangler login
 pnpm deploy:preview      # 本番に出さずにバージョンだけを上げ、確認用の URL を得る
-pnpm deploy:production   # 本番（warica.<アカウントのサブドメイン>.workers.dev）に出す
+pnpm deploy:production   # 本番に出す
 ```
 
-GitHub と連携して push ごとに自動で公開する場合は、Cloudflare のダッシュボードで Workers & Pages → Import a repository からこのリポジトリを選び、ビルドコマンドを `pnpm build`、デプロイコマンドを `npx wrangler deploy` にします。
+公開した URL に対して E2E を流すこともできます。
+
+```sh
+PLAYWRIGHT_BASE_URL=https://warica.toshikiii7.workers.dev pnpm test:e2e --workers=2
+```
 
 ### Vercel（ロールバック先）
 

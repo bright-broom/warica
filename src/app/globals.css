@@ -1,6 +1,13 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
+/*
+ * WARICA は明るい配色だけを持つ（layout.tsx の colorScheme: 'light'）。
+ * shadcn/ui の基礎部品に残る dark: の指定が端末のダークモードで半端に効かないよう、
+ * dark: は .dark クラスの中だけで有効にする（このアプリでは付けない）。
+ */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --background: var(--brand-sub);
   --foreground: var(--brand-main);
