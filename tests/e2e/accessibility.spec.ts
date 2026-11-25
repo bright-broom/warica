@@ -8,6 +8,8 @@ test('all pages and confirmation expose accessible names and readable text', asy
   page,
   context,
 }, testInfo) => {
+  // axe で10か所近い状態を順に検査する。単独では WebKit でも約15秒だが、並列実行では30秒を超えることがある
+  test.setTimeout(90_000);
   const scan = async (name: string) => {
     // Inspect the settled UI, rather than sampling toast/dialog fade transitions.
     await page.evaluate(
@@ -83,9 +85,9 @@ test('all pages and confirmation expose accessible names and readable text', asy
     .getByRole('button', { name: 'キャンセル', exact: true })
     .click();
   await other.close();
-  await page.getByRole('button', { name: 'リフレッシュ', exact: true }).focus();
+  await page.getByRole('button', { name: '支払いをリセット', exact: true }).focus();
   await scan('refresh');
-  await page.getByRole('button', { name: 'リフレッシュ', exact: true }).click();
+  await page.getByRole('button', { name: '支払いをリセット', exact: true }).click();
   await expect(page.getByRole('alertdialog')).toBeVisible();
   await scan('confirmation');
 });

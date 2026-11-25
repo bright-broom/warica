@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
-import { serializeState, STORAGE_KEY } from '../../src/lib/storage';
-import { DRAFT_KEY } from '../../src/lib/payment-draft';
+import { serializeState, STORAGE_KEY } from '../../src/lib/persistence/storage';
+import { DRAFT_KEY } from '../../src/lib/persistence/payment-draft';
 import { goToStep } from './page-arrows';
 
 const event = {
@@ -62,10 +62,10 @@ for (const path of ['/', '/payments', '/result'] as const) {
     await expect(page.locator('header').getByRole('button')).toHaveCount(1);
     await expect(page.getByRole('button', { name: 'メニュー', exact: true })).toHaveCount(0);
     await expect(page.locator('header').getByRole('status')).toHaveCount(0);
-    await expect(page.locator('[data-ui=panel]').first()).toHaveCSS('border-radius', '24px');
+    await expect(page.locator('[data-ui=panel]').first()).toHaveCSS('border-radius', '16px');
     const saved = await page.evaluate((key) => localStorage.getItem(key), STORAGE_KEY);
     const draft = await page.evaluate((key) => sessionStorage.getItem(key), DRAFT_KEY);
-    const trigger = page.getByRole('button', { name: 'リフレッシュ', exact: true });
+    const trigger = page.getByRole('button', { name: '支払いをリセット', exact: true });
     await trigger.click();
     const dialog = page.getByRole('alertdialog', { name: '支払いをリセット', exact: true });
     await expect(dialog).toContainText('イベント名とメンバーは残ります');
@@ -111,7 +111,7 @@ test('a tab updated while reset confirmation is open cannot be erased', async ({
   context,
 }) => {
   await setup(page);
-  await page.getByRole('button', { name: 'リフレッシュ', exact: true }).click();
+  await page.getByRole('button', { name: '支払いをリセット', exact: true }).click();
   const other = await context.newPage();
   await other.goto('/');
   await other.getByLabel('イベント名', { exact: true }).fill('別タブの最新イベント');
@@ -132,7 +132,7 @@ test('reset invalidates old drafts even when session storage writes fail', async
       return original.call(this, key, value);
     };
   });
-  await page.getByRole('button', { name: 'リフレッシュ', exact: true }).click();
+  await page.getByRole('button', { name: '支払いをリセット', exact: true }).click();
   await confirmReset(page);
   await expect(page.getByLabel('金額', { exact: true })).toHaveValue('');
   await expect(page.locator('main [role=alert]')).toContainText('下書きを保存できません');
@@ -150,7 +150,7 @@ test('browser reload preserves the ledger and drafts; reset confirmation remains
   await page.reload();
   await expect(page.getByLabel('金額', { exact: true })).toHaveValue('1234');
   await expect(page.getByTestId('payment-list')).toContainText('¥3,000');
-  await page.getByRole('button', { name: 'リフレッシュ', exact: true }).click();
+  await page.getByRole('button', { name: '支払いをリセット', exact: true }).click();
   await expect(page.getByRole('alertdialog')).toBeVisible();
   const report = await new AxeBuilder({ page })
     .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])

@@ -8,6 +8,9 @@ permissions:
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
+env:
+  # wrangler dev（E2E の配信）で使用状況の送信と確認の問い合わせをしない
+  WRANGLER_SEND_METRICS: 'false'
 jobs:
   verify:
     runs-on: ubuntu-latest

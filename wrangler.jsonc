@@ -1,0 +1,13 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "warica",
+  // 静的アセットだけを配信する（Worker のスクリプトはない）
+  "compatibility_date": "2026-11-25",
+  "assets": {
+    "directory": "./out",
+    // /payments → payments.html のように、拡張子なしの URL で HTML を返す（既定の動き）
+    "html_handling": "auto-trailing-slash",
+    // 存在しない URL には out/404.html を 404 で返す
+    "not_found_handling": "404-page",
+  },
+}

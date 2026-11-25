@@ -5,9 +5,9 @@ import {
   calculatePaymentSplit,
   calculateSettlements,
   settlementText,
-} from '../src/lib/calculations';
-import { validatePayment, validateMemberName } from '../src/lib/validation';
-import { emptyState, type Payment, type Member } from '../src/lib/types';
+} from '../../src/lib/domain/calculations';
+import { validatePayment, validateMemberName } from '../../src/lib/domain/validation';
+import { emptyState, type Payment, type Member } from '../../src/lib/domain/types';
 
 const members: Member[] = [
   { id: 'a', name: 'あおい' },

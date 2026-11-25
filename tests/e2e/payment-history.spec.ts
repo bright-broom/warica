@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
-import { serializeState, STORAGE_KEY } from '../../src/lib/storage';
+import { serializeState, STORAGE_KEY } from '../../src/lib/persistence/storage';
 import { goToStep } from './page-arrows';
 
 async function seed(page: Page, count: number) {

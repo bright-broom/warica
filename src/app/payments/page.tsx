@@ -1,14 +1,14 @@
 'use client';
-import { ArrowLeft, ArrowRight, Wallet, ReceiptText } from 'lucide-react';
-import { IconAction, IconLink } from '@/components/IconAction';
-import { ActionRow, Badge, Notice } from '@/components/ui';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
-import { usePaymentWorkspace } from '@/components/PaymentWorkspace';
-import { PaymentEditor } from '@/components/PaymentEditor';
-import { PaymentHistory } from '@/components/PaymentHistory';
+import { ActionButton, ActionLink } from '@/components/actions';
+import { ActionRow, Notice, PageHeader } from '@/components/ui';
+import { PaymentEditor } from '@/components/payments/PaymentEditor';
+import { PaymentHistory } from '@/components/payments/PaymentHistory';
 import { routes } from '@/config/navigation';
-import { useWarikanStore } from '../useWarikanStore';
-import { yen } from '@/lib/calculations';
+import { usePaymentWorkspace } from '@/state/payment-workspace';
+import { useWarikanStore } from '@/state/warikan-store';
+import { yen } from '@/lib/domain/calculations';
 import { scrollToContent } from '@/lib/scroll';
 
 export default function PaymentsPage() {
@@ -19,21 +19,26 @@ export default function PaymentsPage() {
   }
   return (
     <>
-      <h1 className="sr-only">支払い</h1>
-      <div className="flex min-h-10 flex-wrap items-center justify-between gap-3 px-1">
-        <div className="flex min-w-0 items-center gap-3" aria-label="立て替え合計">
-          <Wallet size={22} aria-hidden="true" />
-          <strong className="text-xl font-semibold tracking-tight tabular-nums sm:text-2xl">
-            {yen(total)}
-          </strong>
+      <PageHeader step="ステップ 2 / 3" title="支払い">
+        誰かが立て替えた支払いを、1件ずつ記録します。続けて追加するときは、支払った人と対象者を引き継ぎます。
+      </PageHeader>
+      <dl
+        aria-label="記録した支払い"
+        className="flex flex-wrap items-baseline gap-x-6 gap-y-1 px-1 text-sm"
+      >
+        <div className="flex items-baseline gap-2">
+          <dt className="text-muted-foreground">立て替え合計</dt>
+          <dd className="text-xl font-semibold tabular-nums">{yen(total)}</dd>
         </div>
-        <Badge aria-label={`${state.payments.length}件の支払い`}>
-          <ReceiptText size={14} aria-hidden="true" />
-          {state.payments.length}
-        </Badge>
-      </div>
+        <div className="flex items-baseline gap-2">
+          <dt className="text-muted-foreground">記録</dt>
+          <dd className="tabular-nums">{state.payments.length}件</dd>
+        </div>
+      </dl>
       {state.payments.some((p) => p.needsReview) && (
-        <Notice>旧データは全員で仮計算。対象者を確認してください。</Notice>
+        <Notice>
+          以前のバージョンで記録した支払いは、対象者を全員として仮に計算しています。各支払いを編集して対象者を確認してください。
+        </Notice>
       )}
       <PaymentEditor onDone={complete} />
       {!!state.payments.length && (
@@ -48,23 +53,17 @@ export default function PaymentsPage() {
         />
       )}
       <ActionRow>
-        <IconLink href={routes.members} label="メンバーに戻る" icon={ArrowLeft} />
+        <ActionLink href={routes.members} icon={ArrowLeft} variant="ghost">
+          メンバーに戻る
+        </ActionLink>
         {state.payments.length ? (
-          <IconLink
-            href={routes.result}
-            label="精算結果を見る"
-            icon={ArrowRight}
-            variant="primary"
-            size="large"
-          />
+          <ActionLink href={routes.result} icon={ArrowRight} trailingIcon variant="primary">
+            精算結果を見る
+          </ActionLink>
         ) : (
-          <IconAction
-            label="精算結果を見る"
-            icon={ArrowRight}
-            variant="primary"
-            size="large"
-            disabled
-          />
+          <ActionButton icon={ArrowRight} trailingIcon variant="primary" disabled>
+            精算結果を見る
+          </ActionButton>
         )}
       </ActionRow>
     </>

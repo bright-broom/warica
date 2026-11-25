@@ -9,9 +9,9 @@ import {
   saveToStorage,
   serializeState,
   type StoragePort,
-} from '../src/lib/storage';
-import { emptyState, type WarikanState } from '../src/lib/types';
-import { MAX_PAYMENTS } from '../src/lib/validation';
+} from '../../src/lib/persistence/storage';
+import { emptyState, type WarikanState } from '../../src/lib/domain/types';
+import { MAX_PAYMENTS } from '../../src/lib/domain/validation';
 
 const event: WarikanState = {
   ...emptyState(),

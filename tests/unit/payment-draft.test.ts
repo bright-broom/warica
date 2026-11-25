@@ -5,7 +5,7 @@ import {
   emptyWorkspace,
   readDraft,
   serializeDraft,
-} from '../src/lib/payment-draft';
+} from '../../src/lib/persistence/payment-draft';
 
 const members = [
   { id: 'a', name: 'あおい' },

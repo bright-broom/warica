@@ -6,6 +6,8 @@ const config = [
   {
     ignores: [
       '.next/**',
+      'out/**',
+      '.wrangler/**',
       'node_modules/**',
       'next-env.d.ts',
       'test-results/**',

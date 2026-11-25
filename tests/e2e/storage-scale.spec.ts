@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
-import { parseState, serializeState, STORAGE_KEY } from '../../src/lib/storage';
-import type { WarikanState } from '../../src/lib/types';
+import { parseState, serializeState, STORAGE_KEY } from '../../src/lib/persistence/storage';
+import type { WarikanState } from '../../src/lib/domain/types';
 
 test('typing an event name with 6,000 payments survives an immediate reload', async ({ page }) => {
   const state: WarikanState = {

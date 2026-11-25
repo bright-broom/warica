@@ -8,8 +8,8 @@ import {
   saveToStorage,
   serializeState,
   type StoragePort,
-} from '../src/lib/storage';
-import type { WarikanState } from '../src/lib/types';
+} from '../src/lib/persistence/storage';
+import type { WarikanState } from '../src/lib/domain/types';
 
 function medianMs(run: () => void): number {
   for (let i = 0; i < 10; i++) run();

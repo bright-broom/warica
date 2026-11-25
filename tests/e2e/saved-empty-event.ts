@@ -1,5 +1,5 @@
-import { serializeState, STORAGE_KEY } from '../../src/lib/storage';
-import { emptyState } from '../../src/lib/types';
+import { serializeState, STORAGE_KEY } from '../../src/lib/persistence/storage';
+import { emptyState } from '../../src/lib/domain/types';
 
 // Existing-event regressions deliberately use saved empty data. Initial-use tests use no fixture.
 export const savedEmptyEvent = {

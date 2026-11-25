@@ -9,8 +9,8 @@ import {
   type ReactNode,
 } from 'react';
 import { TriangleAlert, type LucideIcon } from 'lucide-react';
-import { TooltipProvider } from './ui/tooltip';
-import { Toaster } from './ui/sonner';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { Toaster } from '@/components/ui/sonner';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,7 +20,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from './ui/alert-dialog';
+} from '@/components/ui/alert-dialog';
 
 type Confirmation = { title: string; description: string; action: string; icon?: LucideIcon };
 const ConfirmationContext = createContext<((request: Confirmation) => Promise<boolean>) | null>(

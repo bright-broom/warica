@@ -1,115 +1,123 @@
 'use client';
 import { useRef, useState, type FormEvent } from 'react';
+import { ArrowRight, Check, House, Pencil, Plane, Plus, Utensils, X } from 'lucide-react';
+import { ChoiceChips } from '@/components/ChoiceChips';
+import { ActionButton, ActionLink, IconAction } from '@/components/actions';
 import {
-  ArrowRight,
-  Check,
-  Coffee,
-  Pencil,
-  Plus,
-  Users,
-  X,
-  Plane,
-  Utensils,
-  House,
-} from 'lucide-react';
+  ActionRow,
+  Avatar,
+  Badge,
+  Field,
+  Notice,
+  PageHeader,
+  Panel,
+  SectionHeader,
+  TextInput,
+} from '@/components/ui';
 import { Label } from '@/components/ui/label';
-import { IconChoices } from '@/components/IconChoices';
-import { PopWelcome } from '@/components/PopWelcome';
-import { IconAction, IconLink } from '@/components/IconAction';
-import { ActionRow, Avatar, Badge, Notice, Panel, SectionHeader, TextInput } from '@/components/ui';
 import { navigation, routes } from '@/config/navigation';
-import { useWarikanStore } from './useWarikanStore';
+import { isSharedStorageError, useWarikanStore } from '@/state/warikan-store';
+import type { Result } from '@/lib/domain/types';
 
-export default function HomePage() {
+const EVENT_CHOICES = [
+  { label: '週末の旅行', icon: Plane },
+  { label: 'みんなでごはん', icon: Utensils },
+  { label: 'ホームパーティー', icon: House },
+];
+
+/** IME の変換確定の Enter で送信しない */
+const composing = (e: React.KeyboardEvent) => e.nativeEvent.isComposing || e.keyCode === 229;
+
+export default function MembersPage() {
   const { state, setEventName, addMember, editMember, removeMember } = useWarikanStore();
   const [name, setName] = useState('');
   const nameRef = useRef<HTMLInputElement>(null);
   const [editId, setEditId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [error, setError] = useState('');
-  const ready = navigation(state).find((step) => step.href === routes.payments)!.ready;
+  const payments = navigation(state).find((step) => step.href === routes.payments)!;
+  // 保存容量の超過などは画面上部の共通の案内に出るので、ここでは重ねて出さない
+  const show = (result: Result<void>) =>
+    setError(result.ok || isSharedStorageError(result.error) ? '' : result.error);
+
   function add(event: FormEvent) {
     event.preventDefault();
     const result = addMember(name);
+    show(result);
     if (result.ok) {
       setName('');
-      setError('');
       nameRef.current?.focus();
-    } else setError(result.error);
+    }
   }
   function saveEdit() {
     if (!editId) return;
     const result = editMember(editId, editName);
-    if (result.ok) {
-      setEditId(null);
-      setError('');
-    } else setError(result.error);
+    show(result);
+    if (result.ok) setEditId(null);
   }
   return (
     <>
-      <h1 className="sr-only">メンバー</h1>
-      <PopWelcome />
-      <Panel tone="soft">
-        <SectionHeader icon={Coffee} title="イベント" />
-        <Label htmlFor="event-name" className="sr-only">
-          イベント名
-        </Label>
-        <TextInput
-          id="event-name"
-          className="border-main/25 bg-sub text-lg font-semibold"
-          value={state.eventName}
-          onChange={(e) => setEventName(e.target.value)}
-          placeholder="イベント名"
-          maxLength={50}
-          autoComplete="off"
-        />
-        <div className="mt-3">
-          <IconChoices
-            label="イベントの候補"
+      <PageHeader step="ステップ 1 / 3" title="メンバー">
+        旅行や食事の立て替えを記録して、誰が誰にいくら送ればよいかを計算します。ログインは不要で、入力はこのブラウザの中だけに保存されます。
+      </PageHeader>
+      <Panel>
+        <Field id="event-name" label="イベント名">
+          <TextInput
+            id="event-name"
+            className="text-lg font-semibold"
             value={state.eventName}
-            onValueChange={setEventName}
-            choices={[
-              { label: '週末の旅行', icon: Plane },
-              { label: 'みんなでごはん', icon: Utensils },
-              { label: 'ホームパーティー', icon: House },
-            ]}
+            onChange={(e) => show(setEventName(e.target.value))}
+            placeholder="例：京都旅行"
+            maxLength={50}
+            autoComplete="off"
+          />
+        </Field>
+        <div className="mt-3 flex justify-end sm:justify-start">
+          <ChoiceChips
+            label="イベント名の候補"
+            value={state.eventName}
+            onValueChange={(value) => show(setEventName(value))}
+            choices={EVENT_CHOICES}
           />
         </div>
       </Panel>
       <Panel>
-        <SectionHeader icon={Users} title="メンバー">
+        <SectionHeader
+          title="メンバー"
+          description="割り勘する人を2人以上登録します。名前は精算結果やコピーした文章に出ます。"
+        >
           <Badge>{state.members.length}人</Badge>
         </SectionHeader>
-        <form className="flex items-center gap-2" onSubmit={add}>
-          <Label htmlFor="member-name" className="sr-only">
-            メンバーの名前
-          </Label>
-          <TextInput
-            id="member-name"
-            ref={nameRef}
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="名前"
-            maxLength={20}
-            autoComplete="off"
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && (e.nativeEvent.isComposing || e.keyCode === 229))
-                e.preventDefault();
-            }}
-          />
-          <IconAction
-            type="submit"
-            label="追加"
-            icon={Plus}
-            variant="primary"
-            disabled={!name.trim()}
-          />
+        <form className="flex items-end gap-2" onSubmit={add}>
+          <div className="min-w-0 flex-1">
+            <Field id="member-name" label="メンバーの名前">
+              <TextInput
+                id="member-name"
+                ref={nameRef}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="例：あおい"
+                maxLength={20}
+                autoComplete="off"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && composing(e)) e.preventDefault();
+                }}
+              />
+            </Field>
+          </div>
+          <ActionButton type="submit" icon={Plus} disabled={!name.trim()}>
+            追加
+          </ActionButton>
         </form>
-        {error && <Notice alert>{error}</Notice>}
+        {error && (
+          <div className="mt-3">
+            <Notice alert>{error}</Notice>
+          </div>
+        )}
         {state.members.length ? (
-          <ul data-testid="member-list" className="mt-5 divide-y divide-main/10">
+          <ul data-testid="member-list" className="mt-5 divide-y divide-border">
             {state.members.map((member) => (
-              <li key={member.id} className="flex min-w-0 items-center gap-2 py-2">
+              <li key={member.id} className="flex min-h-14 min-w-0 items-center gap-2 py-2">
                 {editId === member.id ? (
                   <div className="flex min-w-0 flex-1 items-center gap-1">
                     <Label htmlFor="edit-member" className="sr-only">
@@ -122,22 +130,25 @@ export default function HomePage() {
                       maxLength={20}
                       autoFocus
                       onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.nativeEvent.isComposing && e.keyCode !== 229) {
+                        if (e.key === 'Enter' && !composing(e)) {
                           e.preventDefault();
                           saveEdit();
                         }
                         if (e.key === 'Escape') setEditId(null);
                       }}
                     />
-                    <IconAction label="名前を保存" icon={Check} onClick={saveEdit} />
+                    <IconAction
+                      label="名前を保存"
+                      icon={Check}
+                      variant="primary"
+                      onClick={saveEdit}
+                    />
                     <IconAction label="編集をキャンセル" icon={X} onClick={() => setEditId(null)} />
                   </div>
                 ) : (
                   <>
                     <Avatar name={member.name} />
-                    <span className="min-w-0 flex-1 text-sm font-medium wrap-anywhere">
-                      {member.name}
-                    </span>
+                    <span className="min-w-0 flex-1 font-medium wrap-anywhere">{member.name}</span>
                     <IconAction
                       icon={Pencil}
                       label={`${member.name}の名前を編集`}
@@ -149,36 +160,31 @@ export default function HomePage() {
                     <IconAction
                       icon={X}
                       label={`${member.name}を削除`}
-                      onClick={() => {
-                        const result = removeMember(member.id);
-                        setError(result.ok ? '' : result.error);
-                      }}
+                      onClick={() => show(removeMember(member.id))}
                     />
                   </>
                 )}
               </li>
             ))}
           </ul>
-        ) : null}
-        {state.members.length < 2 && <p className="mt-4 text-xs text-muted-foreground">2人以上</p>}
+        ) : (
+          <p className="mt-5 text-sm text-muted-foreground">まだメンバーがいません。</p>
+        )}
       </Panel>
       <ActionRow>
-        {ready ? (
-          <IconLink
-            label="支払いを記録する"
-            icon={ArrowRight}
-            variant="primary"
-            size="large"
-            href={routes.payments}
-          />
+        {!payments.ready && (
+          <p className="text-sm text-muted-foreground" role="status">
+            {payments.blockedReason}
+          </p>
+        )}
+        {payments.ready ? (
+          <ActionLink href={routes.payments} icon={ArrowRight} trailingIcon variant="primary">
+            支払いを記録する
+          </ActionLink>
         ) : (
-          <IconAction
-            label="支払いを記録する"
-            icon={ArrowRight}
-            variant="primary"
-            size="large"
-            disabled
-          />
+          <ActionButton icon={ArrowRight} trailingIcon variant="primary" disabled>
+            支払いを記録する
+          </ActionButton>
         )}
       </ActionRow>
     </>

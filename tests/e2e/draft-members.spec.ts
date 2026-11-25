@@ -2,8 +2,8 @@ import { goToStep } from './page-arrows';
 import { savedEmptyEvent } from './saved-empty-event';
 import { expect, test, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
-import { DRAFT_KEY, emptyWorkspace, serializeDraft } from '../../src/lib/payment-draft';
-import { STORAGE_KEY } from '../../src/lib/storage';
+import { DRAFT_KEY, emptyWorkspace, serializeDraft } from '../../src/lib/persistence/payment-draft';
+import { STORAGE_KEY } from '../../src/lib/persistence/storage';
 
 test.use({ storageState: savedEmptyEvent });
 
@@ -67,7 +67,7 @@ for (const restored of [false, true]) {
     await submit.click();
     const row = page.getByTestId('payment-list').locator('li');
     await expect(row).toHaveCount(1);
-    await expect(row).toContainText('支払者：はる');
+    await expect(row).toContainText('支払った人：はる');
     await expect(row).toContainText('対象：はる、りく');
     await expect(row).toContainText('¥3,001');
   });

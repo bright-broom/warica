@@ -15,7 +15,7 @@ import {
   type PaymentInput,
   type Result,
   type Settlement,
-} from '@/lib/types';
+} from '@/lib/domain/types';
 import {
   loadFromStorage,
   saveToStorage,
@@ -24,15 +24,26 @@ import {
   MAX_FILE_SIZE,
   STORAGE_KEY,
   STORAGE_CONFLICT_MESSAGE,
-} from '@/lib/storage';
-import { MAX_MEMBERS, MAX_PAYMENTS, validateMemberName, validatePayment } from '@/lib/validation';
+} from '@/lib/persistence/storage';
+import {
+  MAX_MEMBERS,
+  MAX_PAYMENTS,
+  validateMemberName,
+  validatePayment,
+} from '@/lib/domain/validation';
 import {
   currentSettlements,
   retainPayPayLinks,
   settlementKey,
   validatePayPayUrl,
-} from '@/lib/paypay';
-import { calculateMemberBalances, calculateSettlements } from '@/lib/calculations';
+} from '@/lib/domain/paypay';
+import { calculateMemberBalances, calculateSettlements } from '@/lib/domain/calculations';
+
+const CAPACITY_ERROR_MESSAGE =
+  'イベントの保存容量（2MB）を超えるため、この変更は保存していません。バックアップを書き出してから、不要な支払いを削除してください。';
+
+/** 画面上部の共通の保存エラーとして表示済みのエラーか（各画面で重ねて出さない） */
+export const isSharedStorageError = (error: string) => error === CAPACITY_ERROR_MESSAGE;
 
 function useStore() {
   const [state, setState] = useState<WarikanState>(() => emptyState());
@@ -124,11 +135,12 @@ function useStore() {
       lastUpdated: new Date().toISOString(),
     };
     if (new Blob([serializeState(updated)]).size > MAX_FILE_SIZE) {
-      return {
-        ok: false,
-        error:
-          'イベントの保存容量（2MB）に達しました。バックアップを保存して、不要な支払いを整理してください。',
-      };
+      // 呼び出し側が戻り値を表示しない操作（イベント名の入力など）でも理由が伝わるよう、
+      // 共通の保存エラーとして出す。バックアップ・再試行の操作もそこに並ぶ（WAR-003）。
+      const error = CAPACITY_ERROR_MESSAGE;
+      setStorageError(error);
+      setStorageConflict(false);
+      return { ok: false, error };
     }
     // One provider owns the state across routes. Synchronous saving also covers immediate reloads.
     stateRef.current = updated;

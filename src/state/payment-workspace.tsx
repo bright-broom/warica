@@ -1,7 +1,7 @@
 'use client';
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
-import { useWarikanStore } from '@/app/useWarikanStore';
-import type { Payment } from '@/lib/types';
+import { useWarikanStore } from '@/state/warikan-store';
+import type { Payment } from '@/lib/domain/types';
 import {
   DRAFT_KEY,
   captureDraftSelection,
@@ -10,7 +10,7 @@ import {
   serializeDraft,
   type DraftWorkspace,
   type PaymentDraft,
-} from '@/lib/payment-draft';
+} from '@/lib/persistence/payment-draft';
 
 function useWorkspace() {
   const store = useWarikanStore();
