@@ -8,28 +8,30 @@
   --card-foreground: var(--brand-main);
   --popover: var(--brand-sub);
   --popover-foreground: var(--brand-main);
-  --primary: var(--brand-accent);
-  --primary-foreground: var(--brand-main);
+  --primary: var(--brand-main);
+  --primary-foreground: var(--brand-sub);
   --secondary: var(--brand-sub);
   --secondary-foreground: var(--brand-main);
-  --muted: var(--brand-sub);
+  --muted: color-mix(in srgb, var(--brand-main) 5%, var(--brand-sub));
+  /* 小さい補足文字でも紙面上で 4.5:1 以上を保つ濃さ */
   --muted-foreground: color-mix(in srgb, var(--brand-main) 75%, var(--brand-sub));
   --accent-foreground: var(--brand-main);
   --destructive: var(--brand-main);
   --destructive-foreground: var(--brand-sub);
-  --border: color-mix(in srgb, var(--brand-main) 15%, var(--brand-sub));
-  --input: color-mix(in srgb, var(--brand-main) 20%, var(--brand-sub));
+  --border: color-mix(in srgb, var(--brand-main) 16%, var(--brand-sub));
+  --input: color-mix(in srgb, var(--brand-main) 32%, var(--brand-sub));
   --ring: var(--brand-main);
   --radius: 0.625rem;
-  --app-font: 'Hiragino Maru Gothic ProN', 'Hiragino Sans', 'Noto Sans JP', sans-serif;
-  --app-control-radius: 1rem;
-  --app-panel-radius: 1.5rem;
-  --pop-canvas: color-mix(in srgb, var(--brand-accent) 12%, var(--brand-sub));
-  --pop-dot: color-mix(in srgb, var(--brand-main) 12%, transparent);
-  --pop-line: color-mix(in srgb, var(--brand-main) 55%, var(--brand-sub));
+  --app-font:
+    'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', 'Yu Gothic UI', 'Meiryo',
+    system-ui, sans-serif;
+  --app-control-radius: 0.75rem;
+  --app-panel-radius: 1rem;
+  --app-canvas: color-mix(in srgb, var(--brand-main) 4%, var(--brand-sub));
+  --app-paper: color-mix(in srgb, var(--brand-sub) 55%, white);
 }
 
-/* Expose only the three shared brand roles to Tailwind utilities. */
+/* 3色の役割だけを Tailwind に渡す。標準のカラーパレットは使わない。 */
 @theme inline {
   --color-*: initial;
   --color-background: var(--background);
@@ -50,10 +52,12 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-paper: var(--app-paper);
+  --color-canvas: var(--app-canvas);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: var(--radius);
   --radius-lg: calc(var(--radius) + 4px);
-  --radius-xl: 1.5rem;
+  --radius-xl: 1rem;
   --color-main: var(--brand-main);
   --color-sub: var(--brand-sub);
   --color-accent: var(--brand-accent);
@@ -63,26 +67,23 @@
   --spacing-control: 3rem;
 }
 
-/* Three intensities of the same shared mint gradient. Solid colors are fallbacks. */
+/* アクセント色の濃さ3段階。強調・選択中・注意書きの面に使う。 */
 @utility accent-surface {
   background-color: var(--brand-accent);
-  background-image: var(--brand-accent-gradient);
 }
 @utility accent-soft {
-  background-color: color-mix(in srgb, var(--brand-accent) 28%, var(--brand-sub));
-  background-image: var(--brand-accent-soft);
+  background-color: color-mix(in srgb, var(--brand-accent) 30%, var(--app-paper));
 }
 @utility accent-faint {
-  background-color: color-mix(in srgb, var(--brand-accent) 10%, var(--brand-sub));
-  background-image: var(--brand-accent-faint);
+  background-color: color-mix(in srgb, var(--brand-accent) 12%, var(--app-paper));
 }
 
 @layer base {
   html {
-    @apply bg-sub text-main font-sans antialiased scroll-pt-4 scroll-pb-6 lg:scroll-pb-8;
+    @apply bg-canvas text-main font-sans antialiased scroll-pt-4 scroll-pb-6 lg:scroll-pb-8;
   }
   body {
-    @apply min-w-0;
+    @apply min-w-0 leading-relaxed;
   }
   button,
   a,
@@ -95,7 +96,7 @@
     cursor: pointer;
   }
   :focus-visible {
-    @apply outline-2 outline-offset-4 outline-main;
+    @apply outline-2 outline-offset-2 outline-main;
   }
   svg {
     flex-shrink: 0;
@@ -105,242 +106,61 @@
   }
 }
 
-body {
-  background-color: var(--pop-canvas);
-  background-image: radial-gradient(var(--pop-dot) 1px, transparent 1px);
-  background-size: 20px 20px;
-}
-[data-ui='brand-mark'] {
-  border: 2px solid var(--brand-main);
-  border-radius: 14px;
-  box-shadow: 3px 3px 0 var(--brand-main);
-  transform: rotate(-8deg);
-}
+/* 共通部品の見た目。ページ側では className を足さず、ここと ui/index.tsx で管理する。 */
 [data-ui='panel'] {
-  border: 2px solid var(--brand-main);
-  box-shadow: 4px 5px 0 var(--brand-main);
-}
-[data-ui='panel'][data-tone='soft'] {
-  background-image: var(--brand-accent-soft);
+  border: 1px solid var(--border);
+  background-color: var(--app-paper);
 }
 [data-ui='panel'][data-tone='inverse'] {
-  box-shadow: 5px 5px 0 var(--brand-accent);
-  background-image: radial-gradient(
-    color-mix(in srgb, var(--brand-accent) 18%, transparent) 1px,
-    transparent 1px
-  );
-  background-size: 16px 16px;
-}
-[data-ui='section-header'] > svg {
-  width: 38px;
-  height: 38px;
-  padding: 7px;
-  border: 1.5px solid var(--brand-main);
-  border-radius: 13px;
-  background-image: var(--brand-accent-gradient);
-  transform: rotate(-6deg);
-}
-[data-slot='card-title'] {
-  font-size: 1rem;
-  font-weight: 800;
-}
-[data-ui='badge'] {
-  border: 1.5px solid var(--brand-main);
-  background: var(--brand-sub);
-  font-weight: 800;
-  transform: rotate(3deg);
-}
-[data-slot='avatar'] {
-  border: 1.5px solid var(--brand-main);
-  box-shadow: 2px 2px 0 var(--brand-main);
+  border-color: var(--brand-main);
+  background-color: var(--brand-main);
 }
 :is([data-slot='input'], [data-slot='textarea'], [data-slot='native-select']) {
-  border: 2px solid var(--pop-line);
-  font-weight: 600;
-  box-shadow: inset 2px 2px 0 color-mix(in srgb, var(--brand-main) 6%, transparent);
+  border: 1px solid var(--input);
+  background-color: var(--app-paper);
 }
 :is([data-slot='input'], [data-slot='textarea'], [data-slot='native-select']):focus {
   border-color: var(--brand-main);
 }
-[data-ui='button'] {
-  font-weight: 800;
-  transition-duration: 150ms;
+:is([data-slot='input'], [data-slot='textarea'])[aria-invalid='true'] {
+  border-color: var(--brand-main);
+  border-width: 2px;
 }
-[data-ui='button'][data-variant='default'] {
-  border: 2px solid var(--brand-main);
-  box-shadow: 3px 3px 0 var(--brand-main);
+[data-ui='button'] {
+  font-weight: 600;
+  transition-duration: 120ms;
 }
 [data-ui='button'][data-variant='outline'] {
-  border: 2px solid var(--brand-main);
-  box-shadow: 2px 2px 0 var(--brand-main);
+  border: 1px solid var(--input);
+  background-color: var(--app-paper);
 }
 [data-ui='button'][data-variant='ghost'] {
-  border-color: color-mix(in srgb, var(--brand-main) 20%, transparent);
-  background-color: var(--brand-sub);
+  border-color: transparent;
 }
 [data-ui='choice'] {
-  border: 1.5px solid var(--brand-main);
-  background-color: var(--brand-sub);
-  box-shadow: 2px 2px 0 var(--brand-main);
+  border: 1px solid var(--input);
+  background-color: var(--app-paper);
 }
-:is([data-ui='button'], [data-ui='choice']):focus-visible {
-  outline: 2px solid var(--brand-main);
-  outline-offset: 4px;
-}
-[data-ui='button']:not(:disabled):active,
-[data-ui='choice']:active {
-  box-shadow: none;
+[data-ui='choice'][data-state='on'] {
+  border-color: var(--brand-main);
 }
 [data-slot='label']:has([data-slot='checkbox']) {
-  border: 1.5px solid var(--pop-line);
+  border: 1px solid var(--input);
+  background-color: var(--app-paper);
 }
 [data-slot='label']:has([data-state='checked']) {
   border-color: var(--brand-main);
 }
 [data-slot='alert-dialog-content'] {
-  border: 2px solid var(--brand-main);
-  box-shadow: 5px 5px 0 var(--brand-main);
+  border: 1px solid var(--border);
+  background-color: var(--app-paper);
 }
-[data-ui='navigation'] {
-  border: 2px solid var(--brand-main);
-  background: var(--brand-sub);
-  box-shadow: 4px 4px 0 var(--brand-main);
-  padding: 6px;
-}
-[data-ui='navigation'] [data-ui='button'] {
-  color: var(--brand-main);
-  background: transparent;
-  border: 2px solid transparent;
-  box-shadow: none;
-}
-[data-ui='navigation'] [aria-current='step'] {
-  background-image: var(--brand-accent-gradient);
-  border-color: var(--brand-main);
-  box-shadow: 2px 2px 0 var(--brand-main);
-}
-.pop-welcome {
-  display: flex;
-  position: relative;
-  align-items: center;
-  justify-content: space-between;
-  min-height: 188px;
-  gap: 8px;
-  padding: 12px 4px 20px;
-}
-.pop-welcome-copy {
-  position: relative;
-  z-index: 1;
-}
-.pop-eyebrow {
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  margin-bottom: 12px;
-}
-.pop-headline {
-  font-size: clamp(32px, 6vw, 52px);
-  font-weight: 900;
-  line-height: 1.3;
-  letter-spacing: -0.06em;
-}
-.pop-friends {
-  position: relative;
-  flex: 0 0 108px;
-  height: 148px;
-}
-.pop-friend {
-  position: absolute;
-  display: grid;
-  place-items: center;
-  border: 2px solid var(--brand-main);
-  box-shadow: 4px 4px 0 var(--brand-main);
-}
-.pop-friend svg {
-  width: 52%;
-  height: 52%;
-  stroke-width: 1.8;
-}
-.pop-friend-back {
-  width: 73px;
-  height: 78px;
-  /* Keep the rotated sticker and its shadow inside the narrow hero. */
-  right: 10px;
-  top: 9px;
-  border-radius: 24px;
-  background: var(--brand-sub);
-  transform: rotate(13deg);
-}
-.pop-friend-front {
-  width: 91px;
-  height: 91px;
-  left: 0;
-  bottom: 7px;
-  border-radius: 50%;
-  background-image: var(--brand-accent-gradient);
-  transform: rotate(-12deg);
-}
-.pop-spark {
-  position: absolute;
-  width: 26px;
-  height: 26px;
-  top: 0;
-  left: -9px;
-}
-.pop-result-tag {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: fit-content;
-  border: 1px solid var(--brand-accent);
-  border-radius: 99px;
-  padding: 6px 12px;
-  color: var(--brand-accent);
-  font-size: 13px;
-  font-weight: 700;
-}
-@media (min-width: 640px) {
-  .pop-welcome {
-    min-height: 224px;
-    padding-inline: 12px;
-  }
-  .pop-friends {
-    flex-basis: 180px;
-    height: 190px;
-  }
-  .pop-friend-back {
-    width: 108px;
-    height: 110px;
-    right: 5px;
-  }
-  .pop-friend-front {
-    width: 124px;
-    height: 124px;
-  }
-  .pop-spark {
-    width: 34px;
-    height: 34px;
-    left: 14px;
-  }
-}
+
 @media (width < 64rem) {
   html,
   body {
     overflow-x: clip;
     overscroll-behavior-x: none;
-  }
-}
-
-@media (width >= 64rem) {
-  [data-ui='button']:not(:disabled):active,
-  [data-ui='choice']:active {
-    transform: translateY(2px);
-  }
-}
-
-@media (width >= 64rem) and (hover: hover) and (prefers-reduced-motion: no-preference) {
-  [data-ui='button']:not(:disabled):hover,
-  [data-ui='choice']:hover {
-    transform: translateY(-2px);
   }
 }
 

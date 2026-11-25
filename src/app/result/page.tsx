@@ -1,21 +1,8 @@
 'use client';
 import Link from 'next/link';
 import { useState } from 'react';
-import {
-  ArrowLeft,
-  ArrowRight,
-  Check,
-  Copy,
-  Users,
-  ReceiptText,
-  ArrowRightLeft,
-  ChartNoAxesColumn,
-  ArrowDownLeft,
-  ArrowUpRight,
-  PartyPopper,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { IconAction, IconLink } from '@/components/IconAction';
+import { ArrowLeft, ArrowRight, Check, Copy } from 'lucide-react';
+import { ActionButton, ActionLink, IconAction } from '@/components/actions';
 import {
   ActionRow,
   Avatar,
@@ -24,16 +11,17 @@ import {
   Field,
   Help,
   Notice,
+  PageHeader,
   Panel,
   SectionHeader,
   TextArea,
 } from '@/components/ui';
 import { PayPayTransfer } from '@/components/result/PayPayTransfer';
-import { settlementKey } from '@/lib/domain/paypay';
 import { PaymentHistory } from '@/components/payments/PaymentHistory';
 import { routes } from '@/config/navigation';
 import { useWarikanStore } from '@/state/warikan-store';
-import type { Settlement } from '@/lib/domain/types';
+import { settlementKey } from '@/lib/domain/paypay';
+import type { MemberBalance, Settlement } from '@/lib/domain/types';
 import { settlementText, yen } from '@/lib/domain/calculations';
 
 export default function ResultPage() {
@@ -54,7 +42,7 @@ export default function ResultPage() {
       await navigator.clipboard.writeText(value);
       setCopiedText(value);
       setShowText(false);
-      setMessage('コピーしました。LINEに貼り付けて送れます。');
+      setMessage('コピーしました。LINEなどに貼り付けて送れます。');
     } catch {
       setShareText(value);
       setShowText(true);
@@ -63,92 +51,86 @@ export default function ResultPage() {
   }
   return (
     <>
-      <h1 className="sr-only">精算</h1>
+      <PageHeader step="ステップ 3 / 3" title="精算">
+        この通りに送金すると、全員の負担がそろいます。送金はPayPayや振込などで各自が行い、このアプリはお金を動かしません。
+      </PageHeader>
       {state.payments.some((p) => p.needsReview) && (
         <Notice>
-          旧データは全員で仮計算。
+          以前のバージョンの記録は、対象者を全員として仮に計算しています。
           <Link className="underline underline-offset-4" href={routes.payments}>
-            対象者を確認
+            支払いの画面で対象者を確認
           </Link>
           してください。
         </Notice>
       )}
-      <Panel tone="inverse" className="space-y-4 border-t-4 border-t-accent py-6 sm:py-8">
-        <div className="pop-result-tag">
-          <PartyPopper size={20} aria-hidden="true" />
-          おつかれさま！
-        </div>
-        <p className="text-sm text-sub/75 wrap-anywhere">{state.eventName}</p>
-        <div>
-          <span className="sr-only">合計</span>
-          <strong className="text-4xl font-semibold tracking-tight tabular-nums sm:text-6xl">
-            {yen(total)}
-          </strong>
-        </div>
-        <div className="flex items-center gap-5 text-sm text-accent tabular-nums">
-          <span className="flex items-center gap-2" aria-label={`${state.members.length}人`}>
-            <Users size={16} aria-hidden="true" />
-            {state.members.length}
-          </span>
-          <span
-            className="flex items-center gap-2"
-            aria-label={`${state.payments.length}件の支払い`}
-          >
-            <ReceiptText size={16} aria-hidden="true" />
-            {state.payments.length}
-          </span>
-        </div>
+      <Panel tone="inverse" aria-label="精算の概要">
+        <p className="text-sm text-sub/80 wrap-anywhere">{state.eventName}</p>
+        <dl className="mt-2 flex flex-wrap items-end gap-x-8 gap-y-3">
+          <div>
+            <dt className="text-xs text-sub/80">立て替え合計</dt>
+            <dd className="text-4xl font-semibold tracking-tight tabular-nums sm:text-5xl">
+              {yen(total)}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-xs text-sub/80">メンバー</dt>
+            <dd className="text-lg tabular-nums">{state.members.length}人</dd>
+          </div>
+          <div>
+            <dt className="text-xs text-sub/80">支払い</dt>
+            <dd className="text-lg tabular-nums">{state.payments.length}件</dd>
+          </div>
+        </dl>
       </Panel>
       <Panel>
-        <SectionHeader icon={ArrowRightLeft} title="送金">
+        <SectionHeader
+          title="送金"
+          description="左の人が右の人へ送ります。送金は最大で「人数−1」件にまとめています。"
+        >
           <Badge>{settlements.length}件</Badge>
         </SectionHeader>
-        <Button
-          className="mb-5 ml-auto flex w-fit gap-2 rounded-control"
-          aria-label="送金一覧を一括コピー"
-          onClick={() => void copy()}
-        >
-          {copiedText === text ? (
-            <Check className="size-5" aria-hidden="true" />
-          ) : (
-            <Copy className="size-5" aria-hidden="true" />
-          )}
-          一括コピー
-        </Button>
+        <div className="mb-4 flex justify-end">
+          <ActionButton
+            icon={copiedText === text ? Check : Copy}
+            variant="primary"
+            aria-label="送金一覧を一括コピー"
+            onClick={() => void copy()}
+          >
+            一括コピー
+          </ActionButton>
+        </div>
         {settlements.length ? (
-          <ol data-testid="transfer-list" className="divide-y divide-main/10">
-            {settlements.map((settlement, i) => (
+          <ol data-testid="transfer-list" className="divide-y divide-border">
+            {settlements.map((settlement) => (
               <li
                 key={`${state.eventName}-${settlementKey(settlement)}`}
-                className="grid grid-cols-[1.25rem_minmax(0,1fr)_3rem] items-center gap-x-3 gap-y-2 py-5 first:pt-0 sm:grid-cols-[1.5rem_minmax(0,1fr)_auto_3rem]"
+                className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 py-4 first:pt-0"
               >
-                <span className="text-xs text-muted-foreground tabular-nums" aria-hidden="true">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <div className="col-span-2 grid min-w-0 grid-cols-[minmax(0,1fr)_1rem_minmax(0,1fr)] sm:col-span-1 items-center gap-2 text-sm font-medium wrap-anywhere">
+                <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 font-semibold wrap-anywhere">
                   <span>{settlement.from}</span>
-                  <ArrowRight size={16} aria-label="から" />
+                  <ArrowRight size={16} className="text-muted-foreground" aria-label="から" />
                   <span>{settlement.to}</span>
                 </div>
-                <strong className="col-start-2 w-fit rounded-control accent-soft px-3 py-2 text-lg font-semibold tabular-nums sm:col-start-3">
-                  {yen(settlement.amount)}
-                </strong>
-                <IconAction
-                  className="col-start-3 sm:col-start-4"
-                  label={`${settlement.from}から${settlement.to}への送金をコピー`}
-                  icon={copiedText === transferText(settlement) ? Check : Copy}
-                  onClick={() => void copy(transferText(settlement))}
-                />
+                <div className="flex items-center gap-1">
+                  <strong className="text-lg font-semibold tabular-nums">
+                    {yen(settlement.amount)}
+                  </strong>
+                  <IconAction
+                    label={`${settlement.from}から${settlement.to}への送金をコピー`}
+                    icon={copiedText === transferText(settlement) ? Check : Copy}
+                    onClick={() => void copy(transferText(settlement))}
+                  />
+                </div>
                 <PayPayTransfer settlement={settlement} />
               </li>
             ))}
           </ol>
         ) : (
-          <EmptyState icon={Check}>
-            <h3>精算不要</h3>
+          <EmptyState icon={Check} title="精算不要" headingLevel={3}>
+            全員の支払った額と負担額が一致しています。送金はいりません。
           </EmptyState>
         )}
-        <p className={message ? 'my-4 text-sm leading-6' : 'sr-only'} role="status">
+        <p className={message ? 'mt-4 text-sm leading-6' : 'sr-only'} role="status">
           {message}
         </p>
         {showText && (
@@ -163,54 +145,56 @@ export default function ResultPage() {
         )}
       </Panel>
       <Panel>
-        <SectionHeader icon={ChartNoAxesColumn} title="内訳" />
-        <div className="divide-y divide-main/10">
-          {balances.map((balance) => {
-            const status =
-              balance.balance > 0 ? '受け取る' : balance.balance < 0 ? '支払う' : '精算不要';
-            const StatusIcon =
-              balance.balance > 0 ? ArrowDownLeft : balance.balance < 0 ? ArrowUpRight : Check;
-            return (
-              <div
-                data-testid="balance-row"
-                key={balance.memberId}
-                className="grid min-w-0 gap-4 py-5 first:pt-0 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)] sm:items-center"
-              >
-                <div className="flex min-w-0 items-center gap-3 text-sm font-medium">
-                  <Avatar name={balance.memberName} />
-                  <span className="min-w-0 wrap-anywhere">{balance.memberName}</span>
-                </div>
-                <dl className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.15fr)] items-start gap-2 text-xs tabular-nums">
-                  <div className="space-y-2">
-                    <dt className="text-muted-foreground">支払</dt>
-                    <dd className="wrap-anywhere">{yen(balance.paid)}</dd>
-                  </div>
-                  <div className="space-y-2">
-                    <dt className="text-muted-foreground">負担</dt>
-                    <dd className="wrap-anywhere">{yen(balance.share)}</dd>
-                  </div>
-                  <div className="space-y-1.5">
-                    <dt className="flex items-center gap-1" title={status}>
-                      <StatusIcon size={16} aria-hidden="true" />
-                      <span className="sr-only">{status}</span>
-                    </dt>
-                    <dd className="font-semibold wrap-anywhere">
-                      {yen(Math.abs(balance.balance))}
-                    </dd>
-                  </div>
-                </dl>
-              </div>
-            );
-          })}
+        <SectionHeader
+          title="一人ずつの内訳"
+          description="支払った額から負担額を引いた差が、受け取る額・送る額になります。"
+        />
+        <div className="divide-y divide-border">
+          {balances.map((balance) => (
+            <BalanceRow key={balance.memberId} balance={balance} />
+          ))}
         </div>
         <Help label="精算について">
-          端数は支払いごとに対象者の登録順で1円ずつ配分。送金は各自で行ってください。
+          各支払いを対象者だけで均等に分け、割り切れない1円は対象者の登録順に配分します。受け取る額・送る額の大きい人から順に相殺するため、送金は最大で人数−1件です。
         </Help>
       </Panel>
       <PaymentHistory />
       <ActionRow>
-        <IconLink href={routes.payments} label="支払いを追加・編集する" icon={ArrowLeft} />
+        <ActionLink href={routes.payments} icon={ArrowLeft}>
+          支払いを追加・編集する
+        </ActionLink>
       </ActionRow>
     </>
+  );
+}
+
+function BalanceRow({ balance }: { balance: MemberBalance }) {
+  const status = balance.balance > 0 ? '受け取る' : balance.balance < 0 ? '送る' : '精算不要';
+  return (
+    <div
+      data-testid="balance-row"
+      className="grid min-w-0 gap-3 py-4 first:pt-0 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)] sm:items-center"
+    >
+      <div className="flex min-w-0 items-center gap-3 font-medium">
+        <Avatar name={balance.memberName} />
+        <span className="min-w-0 wrap-anywhere">{balance.memberName}</span>
+      </div>
+      <dl className="grid grid-cols-3 gap-2 text-sm tabular-nums">
+        <div>
+          <dt className="text-xs text-muted-foreground">支払った額</dt>
+          <dd className="wrap-anywhere">{yen(balance.paid)}</dd>
+        </div>
+        <div>
+          <dt className="text-xs text-muted-foreground">負担額</dt>
+          <dd className="wrap-anywhere">{yen(balance.share)}</dd>
+        </div>
+        <div>
+          <dt className="text-xs text-muted-foreground">{status}</dt>
+          <dd className="font-semibold wrap-anywhere">
+            {balance.balance === 0 ? '—' : yen(Math.abs(balance.balance))}
+          </dd>
+        </div>
+      </dl>
+    </div>
   );
 }

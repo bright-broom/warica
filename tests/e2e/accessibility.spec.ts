@@ -83,9 +83,9 @@ test('all pages and confirmation expose accessible names and readable text', asy
     .getByRole('button', { name: 'キャンセル', exact: true })
     .click();
   await other.close();
-  await page.getByRole('button', { name: 'リフレッシュ', exact: true }).focus();
+  await page.getByRole('button', { name: '支払いをリセット', exact: true }).focus();
   await scan('refresh');
-  await page.getByRole('button', { name: 'リフレッシュ', exact: true }).click();
+  await page.getByRole('button', { name: '支払いをリセット', exact: true }).click();
   await expect(page.getByRole('alertdialog')).toBeVisible();
   await scan('confirmation');
 });

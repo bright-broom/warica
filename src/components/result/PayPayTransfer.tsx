@@ -5,7 +5,7 @@ import { useWarikanStore } from '@/state/warikan-store';
 import { PAYPAY_GUIDE_URL, settlementKey } from '@/lib/domain/paypay';
 import type { Settlement } from '@/lib/domain/types';
 import { yen } from '@/lib/domain/calculations';
-import { IconAction } from '@/components/IconAction';
+import { IconAction } from '@/components/actions';
 import { Field, Help, Notice, TextInput } from '@/components/ui';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent } from '@/components/ui/collapsible';
@@ -78,7 +78,7 @@ export function PayPayTransfer({ settlement }: { settlement: Settlement }) {
           ) : (
             <>
               <Link2 className="size-4" aria-hidden="true" />
-              PayPay
+              請求リンクを登録
             </>
           )}
         </Button>

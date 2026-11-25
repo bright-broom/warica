@@ -4,12 +4,19 @@ import { ToggleGroup, ToggleGroupItem } from './ui/toggle-group';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 
 type Choice = { label: string; icon: LucideIcon };
-export function IconChoices({
+
+/**
+ * よく使う値をワンタップで入れる候補。選ぶと入力欄の値が置き換わる。
+ * 640px 以上はアイコンと文字、スマホは親指の届く右側に収まるようアイコンだけにする
+ * （名前は読み上げとツールチップで伝える）。
+ */
+export function ChoiceChips({
   label,
   value,
   onValueChange,
   choices,
 }: {
+  /** 候補の並びの読み上げ名 */
   label: string;
   value: string;
   onValueChange: (value: string) => void;
@@ -19,7 +26,7 @@ export function IconChoices({
     <ToggleGroup
       type="single"
       spacing={1}
-      className="ml-auto flex max-w-[6.25rem] flex-wrap justify-end sm:max-w-none"
+      className="flex max-w-[6.25rem] flex-wrap justify-end gap-2 sm:max-w-none sm:justify-start"
       aria-label={label}
       value={value}
       onValueChange={(next) => {
@@ -32,12 +39,15 @@ export function IconChoices({
             <ToggleGroupItem
               value={label}
               aria-label={label}
-              className="h-12 w-12 min-w-12 rounded-control p-0 aria-checked:accent-soft aria-checked:text-main aria-pressed:accent-soft aria-pressed:text-main"
+              className="size-11 min-w-11 rounded-full p-0 text-sm font-medium sm:h-11 sm:w-auto sm:px-4"
             >
-              <Icon className="size-5" aria-hidden="true" />
+              <Icon className="size-4" aria-hidden="true" />
+              <span className="sr-only sm:not-sr-only">{label}</span>
             </ToggleGroupItem>
           </TooltipTrigger>
-          <TooltipContent sideOffset={6}>{label}</TooltipContent>
+          <TooltipContent sideOffset={6} className="sm:hidden">
+            {label}
+          </TooltipContent>
         </Tooltip>
       ))}
     </ToggleGroup>

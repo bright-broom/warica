@@ -22,7 +22,7 @@ async function setup(page: Page) {
   await expect(page).toHaveURL(/\/payments$/);
 }
 async function refresh(page: Page) {
-  await page.getByRole('button', { name: 'リフレッシュ', exact: true }).click();
+  await page.getByRole('button', { name: '支払いをリセット', exact: true }).click();
 }
 async function denyLocalWrites(page: Page) {
   await page.evaluate(() => {
@@ -99,7 +99,7 @@ test('complete flow: selected participants, immediate reload, edit, copy fallbac
     .click();
   await expect(page.locator('main [role=alert]')).toContainText('保存できません');
   const downloading = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'バックアップ', exact: true }).click();
+  await page.getByRole('button', { name: 'バックアップを書き出す', exact: true }).click();
   const file = await downloading;
   const backupPath = await file.path();
   expect(backupPath).toBeTruthy();
@@ -252,7 +252,7 @@ test('clipboard success, deletion cancellation and stale-tab protection', async 
   await page.getByRole('link', { name: '精算結果を見る' }).click();
   await page.getByRole('button', { name: '送金一覧を一括コピー' }).click();
   await expect(
-    page.getByRole('status').filter({ hasText: 'コピーしました。LINEに貼り付けて送れます。' }),
+    page.getByRole('status').filter({ hasText: 'コピーしました。LINEなどに貼り付けて送れます。' }),
   ).toBeVisible();
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(
     '週末の京都旅行｜精算結果\n合計 ¥3,000 / 3人 / 1件\n\nはる → あおい：¥1,000\nりく → あおい：¥1,000',
@@ -311,7 +311,9 @@ test('a user-confirmed backup can recover an otherwise unreadable event', async 
   }, key);
   await page.reload();
   await expect(page.getByRole('heading', { name: '保存データを確認してください' })).toBeVisible();
-  await expect(page.getByRole('button', { name: '読み込む', exact: true })).toBeEnabled();
+  await expect(
+    page.getByRole('button', { name: 'バックアップを読み込む', exact: true }),
+  ).toBeEnabled();
   await page.getByLabel('バックアップファイル').setInputFiles({
     name: 'backup.json',
     mimeType: 'application/json',
@@ -343,7 +345,7 @@ test('all routes inherit the shared theme and keep a single persistent shell', a
     (element) => getComputedStyle(element).backgroundColor,
   );
   await page.evaluate(() => {
-    document.documentElement.style.setProperty('--brand-accent', 'var(--brand-main)');
+    document.documentElement.style.setProperty('--brand-main', 'var(--brand-accent)');
   });
   await expect
     .poll(() => primary.evaluate((element) => getComputedStyle(element).backgroundColor))
@@ -521,7 +523,7 @@ test('shadcn controls support keyboard selection, help, tooltips and safe confir
     page.getByRole('button', { name: '最新の保存データを読み込む', exact: true }),
   ).toBeVisible();
   await other.close();
-  const trigger = page.getByRole('button', { name: 'リフレッシュ', exact: true });
+  const trigger = page.getByRole('button', { name: '支払いをリセット', exact: true });
   await trigger.focus();
   await trigger.press('Enter');
   const dialog = page.getByRole('alertdialog', { name: '最新の保存データ' });
@@ -542,8 +544,12 @@ test('failed draft saves preserve inputs through cancelled reset and storage ret
 }) => {
   await setup(page);
   await expect(page.locator('footer')).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'バックアップ', exact: true })).toHaveCount(0);
-  await expect(page.getByRole('button', { name: '読み込む', exact: true })).toHaveCount(0);
+  await expect(
+    page.getByRole('button', { name: 'バックアップを書き出す', exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole('button', { name: 'バックアップを読み込む', exact: true }),
+  ).toHaveCount(0);
   await page.evaluate(() => {
     const original = Storage.prototype.setItem;
     Object.defineProperty(window, '__restoreDraft', {

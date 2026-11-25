@@ -1,22 +1,19 @@
 'use client';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Pencil,
-  ReceiptText,
-  Trash2,
-  Users,
-  Wallet,
-  History,
-  TriangleAlert,
-  Search,
-  X,
   ChevronLeft,
   ChevronRight,
+  Pencil,
+  ReceiptText,
+  Search,
+  Trash2,
+  TriangleAlert,
+  X,
 } from 'lucide-react';
 import { useWarikanStore } from '@/state/warikan-store';
 import { Avatar, Badge, EmptyState, Panel, SectionHeader, TextInput } from '@/components/ui';
 import { useConfirmation } from '@/components/layout/ApplicationUI';
-import { IconAction } from '@/components/IconAction';
+import { IconAction } from '@/components/actions';
 import type { Payment } from '@/lib/domain/types';
 import { yen } from '@/lib/domain/calculations';
 import { createPaymentSearchIndex, searchPayments } from '@/lib/domain/payment-history';
@@ -66,7 +63,10 @@ export function PaymentHistory({
       className="scroll-mt-4 outline-none"
     >
       <Panel>
-        <SectionHeader icon={History} title="支払いの記録">
+        <SectionHeader
+          title="支払いの記録"
+          description="新しい順に20件ずつ表示します。検索しても合計と精算結果は変わりません。"
+        >
           <Badge>{payments.length}件</Badge>
         </SectionHeader>
         <div className="mb-3 flex items-center gap-2">
@@ -113,7 +113,7 @@ export function PaymentHistory({
             : '0件'}
         </p>
         {visible.length ? (
-          <ul data-testid="payment-list" className="divide-y divide-main/10">
+          <ul data-testid="payment-list" className="divide-y divide-border">
             {visible.map((payment) => {
               const payer = names.get(payment.payerId);
               return (
@@ -123,28 +123,23 @@ export function PaymentHistory({
                 >
                   <Avatar name={payer ?? '?'} />
                   <div className="min-w-0 space-y-2 text-xs text-muted-foreground wrap-anywhere">
-                    <h3 className="text-sm font-semibold text-main">
+                    <h3 className="text-[0.9375rem] font-semibold text-main">
                       {payment.memo || '立て替え'}
                     </h3>
-                    <p className="flex items-start gap-2">
-                      <Wallet size={13} className="mt-0.5" aria-hidden="true" />
-                      <span>
-                        <span className="sr-only">支払者：</span>
-                        {payer}
-                      </span>
+                    <p>
+                      支払った人：<span className="font-medium text-main">{payer}</span>
                     </p>
-                    <p className="flex items-start gap-2">
-                      <Users size={13} className="mt-0.5" aria-hidden="true" />
-                      <span>
-                        <span className="sr-only">対象：</span>
-                        {payment.participantIds.map((id) => names.get(id)).join('、')}
+                    <p>
+                      対象：{payment.participantIds.map((id) => names.get(id)).join('、')}
+                      <span className="ml-1 tabular-nums">
+                        （{payment.participantIds.length}人）
                       </span>
                     </p>
                     {payment.needsReview && (
-                      <span className="inline-flex" title="旧データ・対象者を要確認">
+                      <p className="inline-flex items-center gap-1.5 font-medium text-main">
                         <TriangleAlert size={14} aria-hidden="true" />
-                        <span className="sr-only">旧データ・対象者を要確認</span>
-                      </span>
+                        旧データ・対象者を要確認
+                      </p>
                     )}
                   </div>
                   <div className="col-start-2 flex flex-wrap items-center justify-between gap-2 sm:col-start-3 sm:flex-col sm:items-end">
@@ -183,14 +178,18 @@ export function PaymentHistory({
             })}
           </ul>
         ) : (
-          <EmptyState icon={query ? Search : ReceiptText}>
-            <h3>{query ? '見つかりませんでした' : '支払いはありません'}</h3>
+          <EmptyState
+            icon={query ? Search : ReceiptText}
+            title={query ? '見つかりませんでした' : '支払いはありません'}
+            headingLevel={3}
+          >
+            {query && '別の言葉で検索するか、検索をクリアしてください。'}
           </EmptyState>
         )}
         {lastPage > 0 && (
           <nav
             aria-label="支払い履歴のページ"
-            className="mt-5 flex items-center justify-end gap-2 border-t border-main/10 pt-3"
+            className="mt-5 flex items-center justify-end gap-2 border-t border-border pt-3"
           >
             <span
               className="mr-1 text-xs text-muted-foreground tabular-nums"

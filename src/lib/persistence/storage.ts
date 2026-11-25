@@ -1,6 +1,11 @@
 import { parsePayPayLinks } from '../domain/paypay';
 import { initialState, type WarikanState, type Result, type Payment } from '../domain/types';
-import { MAX_MEMBERS, MAX_PAYMENTS, validateMemberName, validatePayment } from '../domain/validation';
+import {
+  MAX_MEMBERS,
+  MAX_PAYMENTS,
+  validateMemberName,
+  validatePayment,
+} from '../domain/validation';
 
 // Keep the existing keys so that existing browser data can be migrated.
 export const STORAGE_KEY = 'warican-app-data-v2';

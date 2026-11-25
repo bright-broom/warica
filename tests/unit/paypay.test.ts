@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { currentSettlements, retainPayPayLinks, validatePayPayUrl } from '../../src/lib/domain/paypay';
+import {
+  currentSettlements,
+  retainPayPayLinks,
+  validatePayPayUrl,
+} from '../../src/lib/domain/paypay';
 import { emptyState, type WarikanState } from '../../src/lib/domain/types';
 import { parseState, serializeState } from '../../src/lib/persistence/storage';
 

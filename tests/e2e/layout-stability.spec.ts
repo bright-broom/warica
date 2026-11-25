@@ -40,7 +40,7 @@ test('scrolling, pressing controls and opening confirmation keep the mobile layo
 }) => {
   await page.goto('/');
   const refresh = page.getByRole('button', {
-    name: 'リフレッシュ',
+    name: '支払いをリセット',
     exact: true,
     includeHidden: true,
   });

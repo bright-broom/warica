@@ -67,7 +67,7 @@ for (const restored of [false, true]) {
     await submit.click();
     const row = page.getByTestId('payment-list').locator('li');
     await expect(row).toHaveCount(1);
-    await expect(row).toContainText('支払者：はる');
+    await expect(row).toContainText('支払った人：はる');
     await expect(row).toContainText('対象：はる、りく');
     await expect(row).toContainText('¥3,001');
   });
